@@ -17,5 +17,9 @@
 #include <future>
 #include <condition_variable>
 #include <atomic>
+#include <array>
+#include <mutex>
+#include <stdio.h>
+#include <initializer_list>
 #include <WinSock2.h>
 #include <windows.h>

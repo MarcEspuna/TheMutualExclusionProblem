@@ -15,15 +15,12 @@ static bool eraseFromVector(T toErase, std::vector<T>& vec)
 
 MsgHandler::MsgHandler(const Linker& comms)
  : m_Running(true), m_CurrentLevel(true), connectivity(nullptr)
-{
-    /* Init windows sockets */
-    Socket::Init();     
-
+{ 
     /* Bind server port */
     server.Bind(comms.serverPort);  
 
     /* Start incomming connections thread */
-    //connectivity = new std::thread(&MsgHandler::IncommingConnections, this);
+    connectivity = new std::thread(&MsgHandler::IncommingConnections, this);
 
     /* Make specified connections */
     for (int port : comms.connections)
@@ -33,22 +30,30 @@ MsgHandler::MsgHandler(const Linker& comms)
         if (cl->Connected())
             addClient(cl);
     }
-    if (comms.parentPort)
+    if (comms.parentPort){
         parent.Connect(comms.parentPort);
+        auto callback = std::bind(&MsgHandler::HandleMsg, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
+        threads.push_back(std::async(std::launch::async, &MsgHandler::ClientService, this, &parent, callback));
+    }
 }
 
 MsgHandler::~MsgHandler()
 {
+    std::cout << "[MSG HANDLER]: Closing clients\n";
     closeClients();
     for (const auto& socket : currentComms)   
         delete socket;
 
+    std::cout << "[MSG HANDLER] Server gracefulclose\n";
     server.gracefulClose();
+    server.close();
+    std::cout << "[MSG HANDLER]: Join server connectivity\n";
     connectivity->join();
     delete connectivity;
+    std::cout << "[MSG HANDLER]: close parent.\n";
+    if (parent.Connected())     parent.gracefulClose();
+    std::cout << "[MSG HANDLER]: End.\n";
     
-    server.close();
-    Socket::Finit();    // Finalize windows sockets 
 }
 
 /// @brief Single thread dedicated to each connected client
@@ -62,6 +67,7 @@ void MsgHandler::ClientService(Socket* socket, std::function<void(int, Socket*, 
         switch (recv(socket->getDescriptor(), &check, 1, MSG_PEEK))
         {
         case 1:     // Incomming read - > <Tag:1 byte(char)> <data: 4 bytes(int)>s
+            std::cout << "[CLIENT SERVICE]: Incomming read.\n";
             std::array<char, 5> data;                           // Reception buffer
             socket->Receive(data);                              // Get data
             handleMsg(*(int*)&data[1], socket, (Tag)data[0]);   // Handle message callback
@@ -97,7 +103,7 @@ void MsgHandler::IncommingConnections()
             Client* cl = new Client(newS, {});
             addClient(cl);
         } else {
-            std::cout << "[MSG HANDLER]: Accept failed.\n";
+            std::cout << "[MSG HANDLER]: Server closed or accept failed\n";
             break;
         }
     }

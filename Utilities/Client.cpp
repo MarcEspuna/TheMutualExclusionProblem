@@ -31,7 +31,6 @@ void Client::Connect(const unsigned int& port, const char* address)
 	if (inet_pton(AF_INET, address, &server.sin_addr.s_addr) <= 0)
 	{
 		std::cout << "[CLIENT]: Error configuring IP\n" << std::endl;
-		exit(0);
 		return;
 	}
 

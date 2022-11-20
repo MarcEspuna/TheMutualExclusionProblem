@@ -40,7 +40,8 @@ private:
     std::thread* connectivity;
     std::vector<std::future<void>> threads;
     
-    std::mutex dataLock;                    // For clients    
+    std::mutex dataLock;                    // For data management
+    std::mutex sendLock;   
 
     bool m_CurrentLevel;
     bool m_Running;

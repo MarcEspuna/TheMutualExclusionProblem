@@ -6,7 +6,7 @@ enable_testing()
 
 add_compile_options(/MDd /MTd)
 
-set(LIB_SRCS Utilities/CentMutex.cpp Utilities/Client.cpp Utilities/Server.cpp Utilities/Socket.cpp Utilities/Process.cpp Utilities/MsgHandler.cpp)
+set(LIB_SRCS Utilities/CentMutex.cpp Utilities/Client.cpp Utilities/Server.cpp Utilities/Socket.cpp Utilities/ProcessLauncher.cpp Utilities/MsgHandler.cpp)
 
 add_library(utilities STATIC ${LIB_SRCS})
 target_link_libraries(utilities Ws2_32.lib)
@@ -17,7 +17,7 @@ target_link_libraries(App utilities)
 target_compile_options(App PUBLIC "/std:c++17")
 target_include_directories(App PUBLIC Utilities)
 
-add_executable(HW HeavyWeights/main.cpp ${LIB_SRCS})
+add_executable(HW HeavyWeights/main.cpp HeavyWeights/HWApp.cpp ${LIB_SRCS})
 target_link_libraries(HW utilities)
 target_compile_options(HW PUBLIC "/std:c++17")
 include_directories(${CMAKE_CURRENT_SOURCE_DIR} Utilities)

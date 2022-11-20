@@ -1,7 +1,8 @@
 #include <iostream>
-#include "CentMutex.h"
-#include "Process.h"
 #include "Commons.h"
+#include "CentMutex.h"
+#include "ProcessLauncher.h"
+#include "HWApp.h"
 
 /* Args: <exe> <parent port> <own port> <name>*/
 int main(int argc, char** argv)
@@ -9,17 +10,10 @@ int main(int argc, char** argv)
     Linker link;
     if (argc > 3)
     {
-        link.parentPort = atoi(argv[1]);
-        link.serverPort = atoi(argv[2]);
+        link.serverPort = atoi(argv[1]);
+        link.parentPort = atoi(argv[2]);
     }
-    
-    CentMutex centMutex(link, false);
-    for (int i = 0; i < 5; i++)
-    {
-        Sleep(1000);
-        centMutex.requestCS();
-        std::cout << "Heavy weight "<< argv[3] << "\n";
-        centMutex.releaseCS();
-    }
+    HWApp app({argv[3]});
+    app.run(link);
     return 0;
 }

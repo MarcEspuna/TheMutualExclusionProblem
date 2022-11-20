@@ -1,8 +1,5 @@
 #pragma once
-#include <stdio.h>
-#include <iostream>
-#include <windows.h>
-#include <initializer_list>
+#include "Commons.h"
 
 class Process {
 public:

@@ -1,9 +1,5 @@
 #pragma once
 #include "Commons.h"
-#include <iostream>
-#include <mutex>
-#include <stdio.h>
-#include <array>
 
 enum SocketType {
     SERVER, CLIENT, UNKNOWN
