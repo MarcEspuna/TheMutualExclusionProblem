@@ -3,13 +3,14 @@
 #include <iostream>
 #include <winsock2.h>
 #include <ws2tcpip.h>
+#include "Log.h"
 
 Client::Client() : m_Connected(false) {}
 
 Client::Client(int port)
 	:m_Connected(false)
 {
-	std::cout << "[CLIENT]: Initialized client socket." << std::endl;
+	LOG_INFO("Initialized client socket.");
 	Connect(port);
 }
 
@@ -19,8 +20,7 @@ Client::Client(SOCKET socket, sockaddr_in details)
 }
 
 Client::~Client() {
-
-	std::cout << "[CLIENT]: Client closed, " << s << std::endl;
+	LOG_WARN("Client closed, {}", s);
 }
 
 void Client::Connect(const unsigned int& port, const char* address)
@@ -30,18 +30,17 @@ void Client::Connect(const unsigned int& port, const char* address)
 	server.sin_family = AF_INET;
 	if (inet_pton(AF_INET, address, &server.sin_addr.s_addr) <= 0)
 	{
-		std::cout << "[CLIENT]: Error configuring IP\n" << std::endl;
+		LOG_ERROR("Client, Error configuring IP");
 		return;
 	}
 
 	//Connect to remote server
 	if (connect(s, (struct sockaddr*)&server, sizeof(server)) < 0)
 	{
-		std::cout << "[CLIENT ERROR]: Error connecting to server" << std::endl;
-		std::cout << "Error code: " << WSAGetLastError() << std::endl; 
+		LOG_ERROR("Client, error connecting to server with code: {}", WSAGetLastError());
 	}
 	else{
-		std::cout << "[CLIENT]: Successfully connected to server" << std::endl;
+		LOG_INFO("[CLIENT]: Successfully connected to server");
 		m_Connected = true;
 	}
 }

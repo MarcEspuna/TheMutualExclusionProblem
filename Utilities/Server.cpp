@@ -1,17 +1,18 @@
 #include "Server.h"
 #include <iostream>
+#include "Log.h"
 
 Server::Server() {}
 
 Server::Server(unsigned int port)
 {
-	std::cout << "[SERVER]: Server socket initialized." << std::endl;
+	LOG_INFO("[SERVER]: Server socket initialized.");
 	Bind(port);	
 }
 
 Server::~Server()
 {
-	std::cout << "[SERVER]: Socket closed, " << s << std::endl;
+	LOG_WARN("Server, Socket closed, {}", s);
 }
 
 SOCKET Server::acceptClient() const
@@ -25,15 +26,15 @@ SOCKET Server::acceptClient() const
 		switch (error)
 		{
 		case WSAEINTR:
-			std::cout << "[SERVER]: Interruption function call, stopping listening for connections..." << std::endl;
+			LOG_WARN("Server, Interruption function call, stopping listening for connections...");
 			break;
 		default:
-			std::cout << "[SERVER]: Accept failed with error code " << error << std::endl;
+			LOG_ERROR("Server, Accept failed with error code: {} ", error);
 			break;
 		}
 		return 0;
 	}
-	std::cout << "[SERVER]: Connection accepted" << std::endl;
+	LOG_INFO("Server, connection accepted.");
 	return new_socket;
 }
 
@@ -47,14 +48,14 @@ void Server::Bind(const unsigned int& port, const unsigned long& address)
 	//Bind
 	if (bind(s, (struct sockaddr*)&server, sizeof(server)) == SOCKET_ERROR)
 	{
-		std::cout << "[SERVER ERROR]: Bind failed with error code : " << WSAGetLastError() << std::endl;
+		LOG_ERROR("[SERVER ERROR]: Bind failed with error code : {}", WSAGetLastError());
+		return;
 	}
-	std::cout << "[SERVER]: Bind done.\n";
+	LOG_INFO("[SERVER]: Bind done.");
 }
 
 
 void Server::listenConn(const unsigned int& connectionCount) const
 {
 	listen(s, connectionCount);
-	std::cout << "[SERVER]: Listening..." << std::endl;
 }

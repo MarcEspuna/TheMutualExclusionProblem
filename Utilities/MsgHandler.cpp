@@ -1,4 +1,5 @@
 #include "MsgHandler.h"
+#include "Log.h"
 
 template<typename T>
 static bool eraseFromVector(T toErase, std::vector<T>& vec)
@@ -39,20 +40,20 @@ MsgHandler::MsgHandler(const Linker& comms)
 
 MsgHandler::~MsgHandler()
 {
-    std::cout << "[MSG HANDLER]: Closing clients\n";
+    LOG_TRACE("MsgHandler, Closing clients");
     closeClients();
     for (const auto& socket : currentComms)   
         delete socket;
 
-    std::cout << "[MSG HANDLER] Server gracefulclose\n";
+    LOG_TRACE("MsgHandler, Server gracefulclose");
     server.gracefulClose();
     server.close();
-    std::cout << "[MSG HANDLER]: Join server connectivity\n";
+    LOG_TRACE("MsgHandler, Join server connectivity");
     connectivity->join();
     delete connectivity;
-    std::cout << "[MSG HANDLER]: close parent.\n";
+    LOG_TRACE("MsgHandler, close parent.");
     if (parent.Connected())     parent.gracefulClose();
-    std::cout << "[MSG HANDLER]: End.\n";
+    LOG_WARN("MsgHandler, End.");
     
 }
 
@@ -67,7 +68,7 @@ void MsgHandler::ClientService(Socket* socket, std::function<void(int, Socket*, 
         switch (recv(socket->getDescriptor(), &check, 1, MSG_PEEK))
         {
         case 1:     // Incomming read - > <Tag:1 byte(char)> <data: 4 bytes(int)>s
-            std::cout << "[CLIENT SERVICE]: Incomming read.\n";
+            LOG_TRACE("ClientService, Incomming read.");
             std::array<char, 5> data;                           // Reception buffer
             socket->Receive(data);                              // Get data
             handleMsg(*(int*)&data[1], socket, (Tag)data[0]);   // Handle message callback
@@ -76,13 +77,12 @@ void MsgHandler::ClientService(Socket* socket, std::function<void(int, Socket*, 
             socket->gracefulClose();
             eraseClient(socket);
             connected = 0;
-            std::cout << "[RECEPTION HANDLING]: Client disconnected.\n";
+            LOG_WARN("ClientService, Client disconnected.");
             break;
         default:
             if (WSAGetLastError() != WSAETIMEDOUT)
             {
-                std::cout << "[RECEPTION HANDLING]: Recv failed: " << WSAGetLastError() << std::endl;
-                std::cout << "File desc: " << socket->getDescriptor() << std::endl;
+                LOG_ERROR("[RECEPTION HANDLING]: Recv failed with code {}, and socket, {}", WSAGetLastError(), socket->getDescriptor());
                 socket->gracefulClose();
                 eraseClient(socket);
                 connected = 0;
@@ -103,11 +103,11 @@ void MsgHandler::IncommingConnections()
             Client* cl = new Client(newS, {});
             addClient(cl);
         } else {
-            std::cout << "[MSG HANDLER]: Server closed or accept failed\n";
+            LOG_WARN("IncommingConnections, Server closed or accept failed");
             break;
         }
     }
-    std::cout << "[MSG HANDLER]: Incomming connections exited.\n";
+    LOG_WARN("IncommingConnections, Incomming connections exited.");
 }
 
 void MsgHandler::SendMsg(Socket* dest, Tag tag, int msg)

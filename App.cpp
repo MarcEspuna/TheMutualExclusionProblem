@@ -6,13 +6,14 @@
 App::App()
 {
     /* Init windows sockets */
-    Socket::Init();  
     Log::CreateLogger("CORE");
+    Socket::Init();  
 }
 
 App::~App()
 {
     Socket::Finit();    // Finalize windows sockets
+    Log::EndLogging();
 }
 
 void App::run()
@@ -21,14 +22,15 @@ void App::run()
     Linker link = {8250, 0, {}};
     CentMutex centMutex(link, true);
 
-    std::cout << "[APP]: Starting HW_A:\n";
+    LOG_INFO("Starting HW_A");
     Process Hw_A("HW.exe");
-    Hw_A.launch({"8888", "8250", "Heavy-weight-A"});
+    Hw_A.launch({"8888", "8250", "HEAVY-WEIGHT-A"});
 
-    std::cout << "[APP]: Starting HW_B\n";
+    LOG_INFO("Starting HW_B");
     Process Hw_B("HW.exe");
-    Hw_B.launch({"8889", "8250", "Heavy-weight-B"});
+    Hw_B.launch({"8889", "8250", "HEAVY-WEIGHT-B"});
 
     Hw_A.wait();
     Hw_B.wait();
+    std::cin.get();
 }

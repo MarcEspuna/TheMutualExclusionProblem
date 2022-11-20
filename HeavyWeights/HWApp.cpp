@@ -2,13 +2,14 @@
 #include "ProcessLauncher.h"
 #include "CentMutex.h"
 #include "Log.h"
+#include "io.h"
 
 HWApp::HWApp(const std::string& name)
     : m_Name(name)
 {
     /* Init windows sockets */
-    Socket::Init();
     Log::CreateLogger(name);  
+    Socket::Init();
 }
 
 HWApp::~HWApp()
@@ -21,12 +22,12 @@ void HWApp::run(Linker link)
     LOG_INFO("Main app run");
     /* Not as leader */
     CentMutex centMutex(link, false);
-    LOG_TRACE("Test");
+    m_Name.append("\n");
     for (int i = 0; i < 5; i++)
     {
         Sleep(1000);
         centMutex.requestCS();
-        std::cout << "Heavy weight "<< m_Name << "\n";
+        _write(1, m_Name.c_str(), (int)m_Name.size());
         centMutex.releaseCS();
     }
     

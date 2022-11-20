@@ -3,6 +3,7 @@
 #include <mutex>
 #include <stdint.h>
 #include <winsock2.h>
+#include "Log.h"
 
 Socket::Socket()
 {
@@ -10,7 +11,7 @@ Socket::Socket()
 }
 
 Socket::Socket(const Socket& copy)
-	: s(copy.s), server(copy.server) { std::cout << "Socket memory copied\n"; }
+	: s(copy.s), server(copy.server) {}
 
 Socket::Socket(SOCKET socket, const sockaddr_in& details)
 	: s(socket), server(details)
@@ -25,33 +26,33 @@ bool Socket::InitSocket()
 {
 	if ((s = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET)
 	{
-		std::cout << "[INIT SOCKET]: Could not create socket : " << WSAGetLastError() << std::endl;
+		LOG_ERROR("[INIT SOCKET]: Could not create socket : {}", WSAGetLastError());
 		return false;
 	}
-	std::cout << "[SOCKET]: Socket initialized." << std::endl;
+	LOG_INFO("Socket {} initialized.", s);
 	return true;
 }
 
 void Socket::Init()
 {
 	WSADATA wsa;						// Winsocket
-	std::cout << "[INIT WINSOCK]: Initialising Winsock Client...\n";
+	LOG_INFO("Initialising Winsock Client...");
 	if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
 	{
-		std::cout << "[INIT WINSOCK]: Failed. Error Code : " << WSAGetLastError() << std::endl;
+		LOG_ERROR("Failed. Error Code : {}", WSAGetLastError());
 	}
 }
 
 void Socket::Finit()
 {
 	WSACleanup();
-	std::cout << "[FINI WINSOCK]: Finalization of windows sockets." << std::endl;
+	LOG_WARN("Finalization of windows sockets.");
 }
 
 void Socket::close() const
 {
 	closesocket(s);
-	std::cout << "Closed socket: " << s << std::endl;
+	LOG_WARN("Closed socket, {}", s);
 }
 
 void Socket::gracefulClose() const
