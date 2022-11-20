@@ -1,11 +1,13 @@
 #include "App.h"
 #include "ProcessLauncher.h"
 #include "CentMutex.h"
+#include "Log.h"
 
 App::App()
 {
     /* Init windows sockets */
     Socket::Init();  
+    Log::CreateLogger("CORE");
 }
 
 App::~App()
@@ -15,6 +17,7 @@ App::~App()
 
 void App::run()
 {
+    LOG_INFO("Running main app");
     Linker link = {8250, 0, {}};
     CentMutex centMutex(link, true);
 
