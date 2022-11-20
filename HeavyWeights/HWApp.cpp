@@ -16,8 +16,9 @@ HWApp::~HWApp()
 
 void HWApp::run(Linker link)
 {
+    /* Not as leader */
     CentMutex centMutex(link, false);
-
+    
     for (int i = 0; i < 5; i++)
     {
         Sleep(1000);
