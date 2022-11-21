@@ -26,9 +26,9 @@ void CentMutex::releaseCS()
 }
 
 
-void CentMutex::HandleMsg(int message, Socket* src, Tag tag)
+void CentMutex::HandleMsg(int message, int src, Tag tag)
 {
-    LOG_INFO("Received, tag: {}, message: {}", (char)tag, message);
+    LOG_INFO("Received, tag: {}, message: {}\n", (char)tag, message);
     switch (tag)
     {
     case Tag::REQUEST:
@@ -38,7 +38,7 @@ void CentMutex::HandleMsg(int message, Socket* src, Tag tag)
             SendMsg(src, Tag::OK);
             m_Token = false;
         } else {
-            LOG_TRACE("LEADER, Adding to the queue\n");
+            LOG_TRACE("LEADER, Adding to the queue.\n");
             pendingQ.push(src);
         }
         break;
@@ -47,12 +47,11 @@ void CentMutex::HandleMsg(int message, Socket* src, Tag tag)
         if (!pendingQ.empty())
         {
             LOG_TRACE("LEADER, Giving token to the pending queue.\n");
-            Socket* next = pendingQ.front();
-            SendMsg(next, Tag::OK);
+            SendMsg(pendingQ.front(), Tag::OK);
             pendingQ.pop();
         } else  {
             m_Token = true;
-            LOG_TRACE("[LEADER]: Got token\n");
+            LOG_TRACE("LEADER, Got token\n");
         } 
         break;
     case Tag::OK:
@@ -66,7 +65,7 @@ void CentMutex::HandleMsg(int message, Socket* src, Tag tag)
 }
 
 
-void CentMutex::HandleChildMsg(int message, Socket* src, Tag tag)
+void CentMutex::HandleChildMsg(int message, int src, Tag tag)
 {
     HandleMsg(message, src, tag);
 }

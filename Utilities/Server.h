@@ -10,6 +10,9 @@ public:
 	Server(unsigned int port);
 	virtual ~Server();
 
+	/* Getters */
+	inline int GetPort() { return m_Port; }
+	
 	/* Accept incomming connection */
 	SOCKET acceptClient() const;
 	/* Listen to incomming client connections */
@@ -18,7 +21,7 @@ public:
 	/* Bind server to specific port and address(localhost if no address is specifed) */
 	void Bind(const unsigned int& port, const unsigned long& address = INADDR_ANY);
 private:
-
+	int m_Port;
 
 };
 

@@ -13,12 +13,13 @@ if(NOT TARGET spdlog)
     find_package(spdlog REQUIRED)
 endif()
 
-set(LIB_SRCS Utilities/CentMutex.cpp Utilities/Client.cpp Utilities/Server.cpp Utilities/Socket.cpp Utilities/ProcessLauncher.cpp Utilities/MsgHandler.cpp Utilities/Log.cpp)
+set(LIB_SRCS Utilities/CentMutex.cpp Utilities/Client.cpp Utilities/Server.cpp Utilities/Socket.cpp Utilities/ProcessLauncher.cpp Utilities/MsgHandler.cpp Utilities/Log.cpp Utilities/DirectClock.cpp Utilities/LamportMutex.cpp)
 set(LIBS Ws2_32.lib spdlog::spdlog)
 
 add_library(utilities STATIC ${LIB_SRCS})
 target_link_libraries(utilities ${LIBS})
 target_include_directories(utilities PUBLIC ${CMAKE_CURRENT_SOURCE_DIR} dependencies/spdlog/include/spdlog)
+target_compile_options(utilities PUBLIC "/std:c++17")
 
 add_executable(App main.cpp App.cpp ${LIB_SRCS})
 target_link_libraries(App utilities)

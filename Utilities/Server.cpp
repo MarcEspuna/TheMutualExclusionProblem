@@ -5,14 +5,15 @@
 Server::Server() {}
 
 Server::Server(unsigned int port)
+	: m_Port(port)
 {
-	LOG_INFO("[SERVER]: Server socket initialized.");
+	LOG_INFO("Server, Server socket initialized.\n");
 	Bind(port);	
 }
 
 Server::~Server()
 {
-	LOG_WARN("Server, Socket closed, {}", s);
+	LOG_WARN("Server, Socket closed, {}\n", s);
 }
 
 SOCKET Server::acceptClient() const
@@ -26,20 +27,21 @@ SOCKET Server::acceptClient() const
 		switch (error)
 		{
 		case WSAEINTR:
-			LOG_WARN("Server, Interruption function call, stopping listening for connections...");
+			LOG_WARN("Server, Interruption function call, stopping listening for connections...\n");
 			break;
 		default:
-			LOG_ERROR("Server, Accept failed with error code: {} ", error);
+			LOG_ERROR("Server, Accept failed with error code: {}\n", error);
 			break;
 		}
 		return 0;
 	}
-	LOG_INFO("Server, connection accepted.");
+	LOG_INFO("Server, connection accepted.\n");
 	return new_socket;
 }
 
 void Server::Bind(const unsigned int& port, const unsigned long& address)
 {
+	m_Port = port;
 	//Prepare the sockaddr_in structure
 	server.sin_family = AF_INET;
 	server.sin_addr.s_addr = address;
@@ -48,10 +50,10 @@ void Server::Bind(const unsigned int& port, const unsigned long& address)
 	//Bind
 	if (bind(s, (struct sockaddr*)&server, sizeof(server)) == SOCKET_ERROR)
 	{
-		LOG_ERROR("[SERVER ERROR]: Bind failed with error code : {}", WSAGetLastError());
+		LOG_ERROR("Server, bind failed with error code : {}\n", WSAGetLastError());
 		return;
 	}
-	LOG_INFO("[SERVER]: Bind done.");
+	LOG_INFO("Server, Bind done.\n");
 }
 
 

@@ -21,37 +21,40 @@ public:
     ~MsgHandler();
 
     void SendMsgParent(Tag tag, int msg = 0);
-    void SendMsg(Socket* dest, Tag tag, int msg = 0);
+    void SendMsg(int dest, Tag tag, int msg = 0);
+    void BroadcastMsg(Tag tag, int msg);
 
     inline void SetIncommingSocketsToCurrentLevel() { m_CurrentLevel = true; }
     inline void SetIncommingSocketsToChildLevel() { m_CurrentLevel = false; }    
 
     /* Pure virtual function */
-    virtual void HandleMsg(int message, Socket* src, Tag tag) = 0;          /* Used for current level processes */
-    virtual void HandleChildMsg(int message, Socket* src, Tag tag) = 0;     /* Used for child porcesses */
+    virtual void HandleMsg(int message, int src, Tag tag) = 0;          /* Used for current level processes */
+    virtual void HandleChildMsg(int message, int src, Tag tag) = 0;     /* Used for child porcesses */
 
 private:
-    Server server;
-    Client parent;                          // Upper level
-    std::vector<Socket*> currentComms;      // Current level
-    std::vector<Socket*> childComms;        // Child level
+    Server server;                              // Incomming connections                            
+    Client parent;                              // Upper level connection
+
+    std::unordered_map<int, Socket*> sockets;
+    std::vector<int> currentComms;              // Current level socket ids
+    std::vector<int> childComms;                // Child level socket ids
 
     /* Incomming connections thread */
     std::thread* connectivity;
     std::vector<std::future<void>> threads;
     
-    std::mutex dataLock;                    // For data management
+    std::mutex dataLock;                        // For data management
     std::mutex sendLock;   
 
     bool m_CurrentLevel;
     bool m_Running;
 private:
     void IncommingConnections();
-    void ClientService(Socket* socket, std::function<void(int, Socket*, Tag)> callback);
+    void ClientService(int id, std::function<void(int, int, Tag)> callback);
 
     /* Data management */
-    void addClient(Socket* client);
-    void eraseClient(Socket* client);
+    void addClient(int id, Socket* client);
+    void eraseClient(int id);
     void closeClients();
 };
 

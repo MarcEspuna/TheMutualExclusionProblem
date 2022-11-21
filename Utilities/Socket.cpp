@@ -36,7 +36,7 @@ bool Socket::InitSocket()
 void Socket::Init()
 {
 	WSADATA wsa;						// Winsocket
-	LOG_INFO("Initialising Winsock Client...");
+	LOG_INFO("Initialising Winsock Client...\n");
 	if (WSAStartup(MAKEWORD(2, 2), &wsa) != 0)
 	{
 		LOG_ERROR("Failed. Error Code : {}", WSAGetLastError());
@@ -46,13 +46,13 @@ void Socket::Init()
 void Socket::Finit()
 {
 	WSACleanup();
-	LOG_WARN("Finalization of windows sockets.");
+	LOG_WARN("Finalization of windows sockets.\n");
 }
 
 void Socket::close() const
 {
 	closesocket(s);
-	LOG_WARN("Closed socket, {}", s);
+	LOG_WARN("Closed socket, {}\n", s);
 }
 
 void Socket::gracefulClose() const

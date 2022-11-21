@@ -10,7 +10,7 @@ Client::Client() : m_Connected(false) {}
 Client::Client(int port)
 	:m_Connected(false)
 {
-	LOG_INFO("Initialized client socket.");
+	LOG_INFO("Initialized client socket.\n");
 	Connect(port);
 }
 
@@ -20,7 +20,7 @@ Client::Client(SOCKET socket, sockaddr_in details)
 }
 
 Client::~Client() {
-	LOG_WARN("Client closed, {}", s);
+	LOG_WARN("Client closed, {}\n", s);
 }
 
 void Client::Connect(const unsigned int& port, const char* address)
@@ -37,10 +37,10 @@ void Client::Connect(const unsigned int& port, const char* address)
 	//Connect to remote server
 	if (connect(s, (struct sockaddr*)&server, sizeof(server)) < 0)
 	{
-		LOG_ERROR("Client, error connecting to server with code: {}", WSAGetLastError());
+		LOG_ERROR("Client, error connecting to server with code: {}\n", WSAGetLastError());
 	}
 	else{
-		LOG_INFO("[CLIENT]: Successfully connected to server");
+		LOG_INFO("Client, successfully connected to server\n");
 		m_Connected = true;
 	}
 }
