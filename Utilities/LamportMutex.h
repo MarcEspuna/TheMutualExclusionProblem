@@ -15,15 +15,13 @@ public:
 
     void HandleMsg(int message, int src, Tag tag) override;          /* Used for current level processes */
     void HandleChildMsg(int message, int src, Tag tag) override;     /* Used for child porcesses */
+
 private:
     bool okeyCS();
     
 private:
-    int m_Id;
     DirectClock m_Clock;
-    std::priority_queue<std::pair<int, int>> m_RequestQ;             // <<ticks><Id>>
+    std::priority_queue<std::pair<int, int>, std::vector<std::pair<int,int>>, std::greater<std::pair<int,int>>> m_RequestQ;             // <<ticks><Id>>
+    int m_ConnReadyCount;
     
-    /* Mutex only used to make thread wait */
-    std::mutex mtx_Wait;
-    std::condition_variable cv_Wait;   
 };

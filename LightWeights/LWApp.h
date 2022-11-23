@@ -1,10 +1,11 @@
+#pragma once
 #include "Commons.h"
 #include "CentMutex.h"
 
-class HWApp {
+class LWApp {
 public:
-    HWApp(const std::string& name);
-    ~HWApp();
+    LWApp(const std::string& name);
+    ~LWApp();
 
     void run(Linker link);
 private:

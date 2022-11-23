@@ -15,7 +15,7 @@ static bool eraseFromVector(T toErase, std::vector<T>& vec)
 
 
 MsgHandler::MsgHandler(const Linker& comms)
- : m_Running(true), m_CurrentLevel(true), connectivity(nullptr)
+ : m_Running(true), m_CurrentLevel(true), connectivity(nullptr), m_Id(comms.serverPort)
 { 
     /* Bind server port */
     server.Bind(comms.serverPort);  
@@ -46,7 +46,7 @@ MsgHandler::MsgHandler(const Linker& comms)
         /* Create parent callback */
         auto callback = std::bind(&MsgHandler::HandleMsg, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
         /* Parent callback, ONLY used for centralized thread */
-        threads.push_back(std::async(std::launch::async, &MsgHandler::ClientService, this, sockId[0], callback));
+        threads.push_back(std::async(std::launch::async, &MsgHandler::ClientService, this, sockId[0], &parent, callback));
     }
 }
 
@@ -72,38 +72,37 @@ MsgHandler::~MsgHandler()
 
 /// @brief Single thread dedicated to each connected client
 /// @param socket Actual client we are looking for
-void MsgHandler::ClientService(int id, std::function<void(int, int, Tag)> handleMsg)
+void MsgHandler::ClientService(int id, Socket* src, std::function<void(int, int, Tag)> handleMsg)
 {
     bool connected = true;
-    Socket* socket = sockets[id];
     while (connected)
     {
         char check;
-        switch (recv(socket->getDescriptor(), &check, 1, MSG_PEEK))
+        switch (recv(src->getDescriptor(), &check, 1, MSG_PEEK))
         {
         case 1:     // Incomming read - > <Tag:1 byte(char)> <data: 4 bytes(int)>s
-            LOG_TRACE("ClientService, Incomming read.\n");
             std::array<char, 5> data;                           // Reception buffer
-            socket->Receive(data);                              // Get data
-            handleMsg(*(int*)&data[1], id, (Tag)data[0]);   // Handle message callback
+            src->Receive(data);                              // Get data
+            {
+                std::lock_guard<std::mutex> lck(mtx_CallbackWait);
+                handleMsg(*(int*)&data[1], id, (Tag)data[0]);   // Handle message callback
+            }
             break;
         case 0:     // Reception closed
-            socket->gracefulClose();
-            eraseClient(id);
-            connected = 0;
-            LOG_WARN("ClientService, Client disconnected.\n");
+            connected = false;
+            LOG_WARN("ClientService, Client disconnected, id: {}, my id: {}\n", id, m_Id);
             break;
         default:
             if (WSAGetLastError() != WSAETIMEDOUT)
             {
-                LOG_ERROR("ClientService, recv failed with code {}, and socket, {}\n", WSAGetLastError(), socket->getDescriptor());
-                socket->gracefulClose();
-                eraseClient(id);
-                connected = 0;
+                LOG_ERROR("ClientService, recv failed with code {}, and id, {}, my id {}\n", WSAGetLastError(), id, m_Id);
+                connected = false;
             }
             break;
         } 
     }
+    src->gracefulClose();
+    eraseClient(id);
 }
 
 void MsgHandler::IncommingConnections()
@@ -167,7 +166,7 @@ void MsgHandler::addClient(int id, Socket* client)
     /* Add socket to hash map */
     sockets.insert({id, client});
     /* Start client thread */
-    threads.push_back(std::async(std::launch::async, &MsgHandler::ClientService, this, id, callback));
+    threads.push_back(std::async(std::launch::async, &MsgHandler::ClientService, this, id, client, callback));
 }
 
 void MsgHandler::eraseClient(int id)

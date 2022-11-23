@@ -31,7 +31,12 @@ target_link_libraries(HW utilities)
 target_compile_options(HW PUBLIC "/std:c++17")
 target_include_directories(HW PUBLIC Utilities dependencies/spdlog/include/spdlog)
 
-install( TARGETS utilities App HW )
+add_executable(LW LightWeights/main.cpp LightWeights/LWApp.cpp ${LIB_SRCS})
+target_link_libraries(LW utilities)
+target_compile_options(LW PUBLIC "/std:c++17")
+target_include_directories(LW PUBLIC Utilities dependencies/spdlog/include/spdlog)
+
+install( TARGETS utilities App HW LW)
 
 set(CPACK_PROJECT_NAME ${PROJECT_NAME})
 set(CPACK_PROJECT_VERSION ${PROJECT_VERSION})

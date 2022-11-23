@@ -50,7 +50,7 @@ void Server::Bind(const unsigned int& port, const unsigned long& address)
 	//Bind
 	if (bind(s, (struct sockaddr*)&server, sizeof(server)) == SOCKET_ERROR)
 	{
-		LOG_ERROR("Server, bind failed with error code : {}\n", WSAGetLastError());
+		LOG_ERROR("Server, bind failed, port {}, error code : {}\n", port, WSAGetLastError());
 		return;
 	}
 	LOG_INFO("Server, Bind done.\n");

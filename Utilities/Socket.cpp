@@ -26,10 +26,10 @@ bool Socket::InitSocket()
 {
 	if ((s = socket(AF_INET, SOCK_STREAM, 0)) == INVALID_SOCKET)
 	{
-		LOG_ERROR("[INIT SOCKET]: Could not create socket : {}", WSAGetLastError());
+		LOG_ERROR("[INIT SOCKET]: Could not create socket : {}\n", WSAGetLastError());
 		return false;
 	}
-	LOG_INFO("Socket {} initialized.", s);
+	LOG_INFO("Socket {} initialized.\n", s);
 	return true;
 }
 

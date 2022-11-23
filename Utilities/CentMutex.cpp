@@ -2,7 +2,7 @@
 #include "Log.h"
 
 CentMutex::CentMutex(const Linker& coms, bool leader)
-    : MsgHandler(coms), m_Leader(leader), m_Token(false)
+    : MsgHandler(coms), m_Leader(leader), m_Token(false), m_ChildFinishes(0)
 {
     if (leader)     m_Token = true;
 }
@@ -58,6 +58,10 @@ void CentMutex::HandleMsg(int message, int src, Tag tag)
         LOG_TRACE("CHILD, Token received.\n");
         m_Token = true;
         cv_Wait.notify_all();
+        break;
+    case Tag::ACK:
+        LOG_TRACE("CHILD, child process finished\n");
+        m_ChildFinishes++;
         break;
     default:
         break;

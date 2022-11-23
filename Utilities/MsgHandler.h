@@ -5,7 +5,7 @@
 #include "Socket.h"
 
 enum class Tag {
-    REQUEST = 'R', RELEASE = 'L', OK = 'K', ACK = 'A'
+    REQUEST = 'R', RELEASE = 'L', OK = 'K', ACK = 'A', END='E'
 };
 
 struct Linker
@@ -31,6 +31,9 @@ public:
     virtual void HandleMsg(int message, int src, Tag tag) = 0;          /* Used for current level processes */
     virtual void HandleChildMsg(int message, int src, Tag tag) = 0;     /* Used for child porcesses */
 
+    std::vector<int>::iterator begin() { return currentComms.begin(); }
+    std::vector<int>::iterator end() { return currentComms.end(); }
+
 private:
     Server server;                              // Incomming connections                            
     Client parent;                              // Upper level connection
@@ -43,15 +46,24 @@ private:
     std::thread* connectivity;
     std::vector<std::future<void>> threads;
     
-    std::mutex dataLock;                        // For data management
-    std::mutex sendLock;   
+    std::mutex dataLock;                        // For data management 
 
     bool m_CurrentLevel;
     bool m_Running;
-private:
-    void IncommingConnections();
-    void ClientService(int id, std::function<void(int, int, Tag)> callback);
+protected:
+    /* Mutex only used to make thread wait */
+    std::mutex mtx_Wait;
+    std::condition_variable cv_Wait;
 
+    int m_Id;  
+protected:
+    inline int ConnectionSize() {return (int)currentComms.size(); }
+    void IncommingConnections();
+private:
+    /* For MshHandler syncronization */
+    std::mutex mtx_CallbackWait;
+
+    void ClientService(int id, Socket* src, std::function<void(int, int, Tag)> callback);
     /* Data management */
     void addClient(int id, Socket* client);
     void eraseClient(int id);
