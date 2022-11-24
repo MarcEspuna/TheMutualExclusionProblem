@@ -1,8 +1,8 @@
 #include "App.h"
 #include "ProcessLauncher.h"
 #include "CentMutex.h"
+//#define ACTIVE_LOGGING
 #include "Log.h"
-//#include "LamportMutex.h"
 
 App::App()
 {
@@ -34,6 +34,4 @@ void App::run()
     Hw_A.wait();
     Hw_B.wait();
     std::cin.get();
-
-    //LamportMutex<3> mutex({});
 }

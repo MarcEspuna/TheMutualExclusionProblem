@@ -13,7 +13,7 @@ if(NOT TARGET spdlog)
     find_package(spdlog REQUIRED)
 endif()
 
-set(LIB_SRCS Utilities/CentMutex.cpp Utilities/Client.cpp Utilities/Server.cpp Utilities/Socket.cpp Utilities/ProcessLauncher.cpp Utilities/MsgHandler.cpp Utilities/Log.cpp Utilities/DirectClock.cpp Utilities/LamportMutex.cpp)
+set(LIB_SRCS Utilities/CentMutex.cpp Utilities/Client.cpp Utilities/Server.cpp Utilities/Socket.cpp Utilities/ProcessLauncher.cpp Utilities/MsgHandler.cpp Utilities/Log.cpp Utilities/DirectClock.cpp Utilities/LamportMutex.cpp Utilities/RAMutex.cpp)
 set(LIBS Ws2_32.lib spdlog::spdlog)
 
 add_library(utilities STATIC ${LIB_SRCS})

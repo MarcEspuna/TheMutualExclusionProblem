@@ -24,10 +24,10 @@ void LWApp::run(Linker link)
     LamportMutex laMutex(link);
 
     m_Name.append("\n");
-    for (int i = 0; i < 10; i++)
+    for (int i = 0; i < 8; i++)
     {
         laMutex.requestCS();
-        Sleep(1000);
+        Sleep(400);
         _write(1, m_Name.c_str(), (int)m_Name.size());
         laMutex.releaseCS();
     }

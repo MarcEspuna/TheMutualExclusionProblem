@@ -1,15 +1,13 @@
 #pragma once
 #include "Commons.h"
-#include "MsgHandler.h"
 #include "Lock.h"
-#include "Log.h"
-#include "DirectClock.h"
+#include "MsgHandler.h"
+#include "LamportClock.h"
 
-
-class LamportMutex : public MsgHandler, Lock {
+class RAMutex : public MsgHandler, Lock{
 public:
-    LamportMutex(const Linker& link);
-    ~LamportMutex();
+    RAMutex(const Linker& link);
+    ~RAMutex();
 
     void requestCS() override;
     void releaseCS() override;
@@ -19,10 +17,11 @@ public:
 
 private:
     bool okeyCS();
-    
+
 private:
-    DirectClock m_Clock;
-    std::unordered_map<int, int> m_RequestQ;
-    int m_ConnReadyCount;
-    
+    int m_Myts;
+    int m_NumOkey;
+    LamportClock m_Clock;
+    std::queue<int> m_PendingQ;
 };
+

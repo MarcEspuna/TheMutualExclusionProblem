@@ -2,8 +2,6 @@
 #include <iostream>
 #include <memory>
 #include "spdlog.h"
-
-#define ACTIVE_LOGGING
 class Log {
 public:
     /* Static impl */

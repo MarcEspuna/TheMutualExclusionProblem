@@ -16,7 +16,7 @@ public:
     
     void RecieveAction(int sender, int sentValue) {
         m_Ticks[sender] = (m_Ticks[sender] > sentValue ? m_Ticks[sender] : sentValue);
-        m_Ticks[m_Id] = (m_Ticks[m_Id] > sentValue ? m_Ticks[m_Id] : sentValue);
+        m_Ticks[m_Id] = (m_Ticks[m_Id] > sentValue ? m_Ticks[m_Id] : sentValue) + 1;
     }
 
     std::unordered_map<int,int>::iterator begin() { return m_Ticks.begin(); }

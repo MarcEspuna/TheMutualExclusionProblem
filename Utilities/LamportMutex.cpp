@@ -1,3 +1,5 @@
+//#define ACTIVE_LOGGING
+
 #include "LamportMutex.h"
 
 template<typename... Params>
@@ -33,9 +35,10 @@ LamportMutex::~LamportMutex()
 
 void LamportMutex::requestCS()
 {
+    LOG_WARN("LamportMutex request CS. ID: {}\n", m_Id);
     m_Clock.Tick();
     int ticks = m_Clock.GetValue(m_Id);
-    m_RequestQ.push({ticks, m_Id});
+    m_RequestQ[m_Id] = ticks;
     BroadcastMsg(Tag::REQUEST, ticks);
     std::unique_lock<std::mutex> lck(mtx_Wait);
     cv_Wait.wait(lck, [&](){return this->okeyCS();});   // Fix
@@ -44,25 +47,25 @@ void LamportMutex::requestCS()
 
 void LamportMutex::releaseCS()
 {
-    auto& [ticks, id] = m_RequestQ.top();
+    LOG_INFO("LamportMutex releasing mutex. ID: {}\n", m_Id);
+    m_RequestQ.erase(m_Id);
     BroadcastMsg(Tag::RELEASE, m_Clock.GetValue(m_Id));
-    m_RequestQ.pop();
 }
 
 
 
 void LamportMutex::HandleMsg(int message, int src, Tag tag)
 {
-    LOG_TRACE("Message, tag: {}, ticks {}\n", (char)tag, message);
+    LOG_TRACE("Message, tag: {}, ticks {}, from {}\n", (char)tag, message, src);
     m_Clock.RecieveAction(src,message);
     switch (tag)
     {
     case Tag::REQUEST:
-        m_RequestQ.push({message, src});        // Possible problem. Push and erase at the same time
+        m_RequestQ[src] = message;        
         SendMsg(src, Tag::ACK, m_Clock.GetValue(m_Id));
         break;
     case Tag::RELEASE:
-        QueueErase(m_RequestQ, std::make_pair(0,src));
+        m_RequestQ.erase(src);
         break;
     case Tag::OK:   // Other process has all it's connections ready
         m_ConnReadyCount++;
@@ -85,18 +88,22 @@ void LamportMutex::HandleChildMsg(int message, int src, Tag tag)
 bool LamportMutex::okeyCS()
 {   
     /* We look if we are the best candidate in the priority queue */
-    auto& [lowest_Ticks, lowest_Ticks_Id] = m_RequestQ.top();
-    if (lowest_Ticks_Id != m_Id)
-        return false;
-    LOG_WARN("First on the queue. ID: {}\n", m_Id);
-    int myTicks = m_Clock.GetValue(m_Id);
-    for (auto id : m_CurrentComms)
+    LOG_WARN("Checking CS. ID: {}\n", m_Id);
+    if (m_RequestQ.find(m_Id) != m_RequestQ.end())
     {
-        int ticks = m_Clock.GetValue(id);
-        if (isGreater(myTicks, m_Id, ticks, id))    
-            return false;
+        int myTicks = m_RequestQ[m_Id];
+        for (auto otherId : m_CurrentComms)
+        {
+            if (m_RequestQ.find(otherId) != m_RequestQ.end())
+            {
+                if (isGreater(myTicks, m_Id, m_RequestQ[otherId], otherId))
+                    return false;
+            }
+            if (isGreater(myTicks, m_Id, m_Clock.GetValue(otherId), otherId))    
+                return false;
+        }
     }
-    LOG_WARN("Entering mutex area. ID: {}\n", m_Id);
+    LOG_INFO("Entering mutex area. ID: {}\n", m_Id);
     return true;
 }   
 
@@ -116,5 +123,5 @@ static void QueueErase(std::priority_queue<Params...>& queue, std::pair<int,int>
 
 static bool isGreater(int entry1, int id1, int entry2, int id2)
 {
-    return (entry1 > entry2);
+    return entry1 > entry2 || (entry1 == entry2 && id1 > id2);
 }

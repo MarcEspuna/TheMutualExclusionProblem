@@ -1,4 +1,5 @@
 #include "MsgHandler.h"
+//#define ACTIVE_LOGGING
 #include "Log.h"
 
 template<typename T>
@@ -21,7 +22,7 @@ MsgHandler::MsgHandler(const Linker& comms)
     /* Start incomming connections thread */
     connectivity = new std::thread(&MsgHandler::IncommingConnections, this);
 
-    /* Make specified connections */
+    /* Connect to specified servers */
     std::array<int, 1> sockId;
     for (int port : comms.connections)
     {
@@ -29,14 +30,15 @@ MsgHandler::MsgHandler(const Linker& comms)
         Socket* cl = &m_Sockets[port];
         if (cl->Connected())
         {
-            cl->Send(std::array<int,1>{m_Id});      // Send server ID
+            cl->Send(std::array<int,1>{m_Id});                  // Send server ID
             cl->Receive(sockId);                                // Get client ID
-            addClient(sockId[0]);                           // Add new client
+            addClient(sockId[0]);                               // Add new client
         }
     }
+    /* Connect to parent */
     if (comms.parentPort){
         m_Parent.Connect(comms.parentPort);                       // Connect to parent 
-        m_Parent.Send(std::array<int,1>{m_Id});       // Send owr id
+        m_Parent.Send(std::array<int,1>{m_Id});                   // Send owr id
         m_Parent.Receive(sockId);                                 // Receive his id
         LOG_TRACE("Connected to parent, parent id {}, my id {}\n", sockId[0], m_Id);
         /* Create parent callback */
