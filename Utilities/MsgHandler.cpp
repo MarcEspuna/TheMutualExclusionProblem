@@ -15,11 +15,8 @@ static bool eraseFromVector(T toErase, std::vector<T>& vec)
 
 
 MsgHandler::MsgHandler(const Linker& comms)
- : m_Running(true), m_CurrentLevel(true), connectivity(nullptr), m_Id(comms.serverPort)
-{ 
-    /* Bind server port */
-    server.Bind(comms.serverPort);  
-    sockets.insert({server.GetPort(), &server});
+ : m_Running(true), m_CurrentLevel(true), m_Server(comms.serverPort), connectivity(nullptr), m_Id(comms.serverPort), m_Sockets(16)
+{  
 
     /* Start incomming connections thread */
     connectivity = new std::thread(&MsgHandler::IncommingConnections, this);
@@ -28,25 +25,24 @@ MsgHandler::MsgHandler(const Linker& comms)
     std::array<int, 1> sockId;
     for (int port : comms.connections)
     {
-        Client* cl = new Client();
-        cl->Connect(port);
+        m_Sockets.try_emplace(port, port);
+        Socket* cl = &m_Sockets[port];
         if (cl->Connected())
         {
-            cl->Send(std::array<int,1>{server.GetPort()});      // Send server ID
+            cl->Send(std::array<int,1>{m_Id});      // Send server ID
             cl->Receive(sockId);                                // Get client ID
-            addClient(sockId[0], cl);                           // Add new client
+            addClient(sockId[0]);                           // Add new client
         }
     }
     if (comms.parentPort){
-        parent.Connect(comms.parentPort);                       // Connect to parent 
-        parent.Send(std::array<int,1>{server.GetPort()});       // Send owr id
-        parent.Receive(sockId);                                 // Receive his id
-        sockets.insert({sockId[0], &parent});                   // Add parent socket
-        LOG_TRACE("Connected to parent, parent id {}, my id {}\n", sockId[0], server.GetPort());
+        m_Parent.Connect(comms.parentPort);                       // Connect to parent 
+        m_Parent.Send(std::array<int,1>{m_Id});       // Send owr id
+        m_Parent.Receive(sockId);                                 // Receive his id
+        LOG_TRACE("Connected to parent, parent id {}, my id {}\n", sockId[0], m_Id);
         /* Create parent callback */
         auto callback = std::bind(&MsgHandler::HandleMsg, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
         /* Parent callback, ONLY used for centralized thread */
-        threads.push_back(std::async(std::launch::async, &MsgHandler::ClientService, this, sockId[0], &parent, callback));
+        threads.push_back(std::async(std::launch::async, &MsgHandler::ClientService, this, sockId[0], &m_Parent, callback));
     }
 }
 
@@ -54,19 +50,15 @@ MsgHandler::~MsgHandler()
 {
     LOG_TRACE("MsgHandler, closing all clients\n");
     closeClients();
-    for (const auto& ids : currentComms)   
-        delete sockets[ids];
-    for (const auto& ids : childComms)
-        delete sockets[ids];
 
     LOG_TRACE("MsgHandler, Server gracefulclose\n");
-    server.gracefulClose();
-    server.close();
+    m_Server.gracefulClose();
+    m_Server.close();
     LOG_TRACE("MsgHandler, Join server connectivity\n");
     connectivity->join();
     delete connectivity;
     LOG_TRACE("MsgHandler, close parent.\n");
-    if (parent.Connected())     parent.gracefulClose();
+    if (m_Parent.Connected())     m_Parent.gracefulClose();
     LOG_WARN("MsgHandler, End.\n");
 }
 
@@ -110,15 +102,16 @@ void MsgHandler::IncommingConnections()
     std::array<int, 1> clientId;
     while (m_Running)
     {
-        server.listenConn();
-        SOCKET newS = server.acceptClient();
+        m_Server.listenConn();
+        SOCKET newS = m_Server.acceptClient();
         if (newS)
         {
-            Client* cl = new Client(newS, {});
-            cl->Receive(clientId);                              // Get client ID
-            cl->Send(std::array<int,1>{server.GetPort()});      // Send server ID
-            LOG_TRACE("Server, accepted connection with id, {}, my id {}\n", clientId[0], server.GetPort());
-            addClient(clientId[0], cl);                         // Add new client
+            Socket::Receive(newS, clientId);        // Get client ID
+            Socket::Send(newS, std::array<int,1>{m_Id});
+            m_Sockets.try_emplace(clientId[0], newS);
+
+            LOG_TRACE("Server, accepted connection with id, {}, my id {}\n", clientId[0], m_Id);
+            addClient(clientId[0]);                         // Add new client
         } else {
             LOG_WARN("IncommingConnections, Server closed or accept failed\n");
             break;
@@ -132,7 +125,7 @@ void MsgHandler::SendMsg(int dest, Tag tag, int msg)
     std::array<char, 5> buffer;
     buffer[0] = (char)tag;
     memcpy_s(&buffer[1], sizeof(int), &msg, sizeof(int));
-    Socket* skt = sockets[dest];
+    Socket* skt = &m_Sockets[dest];
     skt->Send(buffer);
 }
 
@@ -141,45 +134,43 @@ void MsgHandler::SendMsgParent(Tag tag, int msg)
     std::array<char, 5> buffer;
     buffer[0] = (char)tag;
     memcpy_s(&buffer[1], sizeof(int), &msg, sizeof(int));
-    parent.Send(buffer);
+    m_Parent.Send(buffer);
 }
 
 void MsgHandler::BroadcastMsg(Tag tag, int msg)
 {
-    for(int id : currentComms)  SendMsg(id, tag, msg);
+    for(int id : m_CurrentComms)  SendMsg(id, tag, msg);
 }
 
-void MsgHandler::addClient(int id, Socket* client)
+void MsgHandler::addClient(int id)
 {
     std::lock_guard<std::mutex> lock(dataLock);
     std::function<void(int, int, Tag)> callback;
     if (m_CurrentLevel)
     {
-        currentComms.push_back(id);         // Add connection 
+        m_CurrentComms.push_back(id);         // Add connection 
         callback = std::bind(&MsgHandler::HandleMsg, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
     }
     else 
     {
-        childComms.push_back(id);
+        m_ChildComms.push_back(id);
         callback = std::bind(&MsgHandler::HandleChildMsg, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3);
     }
-    /* Add socket to hash map */
-    sockets.insert({id, client});
     /* Start client thread */
-    threads.push_back(std::async(std::launch::async, &MsgHandler::ClientService, this, id, client, callback));
+    threads.push_back(std::async(std::launch::async, &MsgHandler::ClientService, this, id, &m_Sockets[id], callback));
 }
 
 void MsgHandler::eraseClient(int id)
 {
     std::lock_guard<std::mutex> lock(dataLock);
-    if (!eraseFromVector(id, currentComms))
-        eraseFromVector(id, childComms);
-    sockets.erase(id);
+    if (!eraseFromVector(id, m_CurrentComms))
+        eraseFromVector(id, m_ChildComms);
+    m_Sockets.erase(id);
 }
 
 void MsgHandler::closeClients()
 {
     std::lock_guard<std::mutex> lock(dataLock);
-    for (const auto& id : currentComms)
-        sockets[id]->gracefulClose();
+    for (const auto& id : m_CurrentComms)
+        m_Sockets[id].gracefulClose();
 }

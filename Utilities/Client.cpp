@@ -5,17 +5,20 @@
 #include <ws2tcpip.h>
 #include "Log.h"
 
-Client::Client() : m_Connected(false) {}
+Client::Client() {}
 
 Client::Client(int port)
-	:m_Connected(false)
 {
 	LOG_INFO("Initialized client socket.\n");
 	Connect(port);
 }
 
+Client::Client(SOCKET socket)
+	: Client(socket, {})
+{ }
+
 Client::Client(SOCKET socket, sockaddr_in details)
-	: Socket(socket, details), m_Connected(false)
+	: Socket(socket, details)
 {	
 }
 

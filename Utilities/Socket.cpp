@@ -6,6 +6,7 @@
 #include "Log.h"
 
 Socket::Socket()
+	: m_Connected(false)
 {
     InitSocket();
 }

@@ -53,6 +53,7 @@ void Server::Bind(const unsigned int& port, const unsigned long& address)
 		LOG_ERROR("Server, bind failed, port {}, error code : {}\n", port, WSAGetLastError());
 		return;
 	}
+	m_Connected = true;
 	LOG_INFO("Server, Bind done.\n");
 }
 

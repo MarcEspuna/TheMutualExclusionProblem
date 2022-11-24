@@ -5,6 +5,7 @@
 #include "Log.h"
 #include "DirectClock.h"
 
+
 class LamportMutex : public MsgHandler, Lock {
 public:
     LamportMutex(const Linker& link);
@@ -20,8 +21,10 @@ private:
     bool okeyCS();
     
 private:
+    using Priority_queue = std::priority_queue<std::pair<int, int>, std::vector<std::pair<int,int>>, std::greater<std::pair<int,int>>>;
+
     DirectClock m_Clock;
-    std::priority_queue<std::pair<int, int>, std::vector<std::pair<int,int>>, std::greater<std::pair<int,int>>> m_RequestQ;             // <<ticks><Id>>
+    Priority_queue m_RequestQ;             // <<ticks><Id>>
     int m_ConnReadyCount;
     
 };

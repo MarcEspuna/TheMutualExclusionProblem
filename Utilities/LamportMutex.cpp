@@ -11,10 +11,6 @@ LamportMutex::LamportMutex(const Linker& link)
     /* Adding the connections to direct clock */
     std::unique_lock<std::mutex> lck(mtx_Wait);
     cv_Wait.wait(lck, [&](){return ConnectionSize() >=2;});
-    
-    for(int conn : *this)
-        m_Clock.GetValue(conn);
-    m_Clock.GetValue(m_Id);
 
     LOG_WARN("All connections accepted\n");
 
@@ -62,7 +58,7 @@ void LamportMutex::HandleMsg(int message, int src, Tag tag)
     switch (tag)
     {
     case Tag::REQUEST:
-        m_RequestQ.push({message, src});
+        m_RequestQ.push({message, src});        // Possible problem. Push and erase at the same time
         SendMsg(src, Tag::ACK, m_Clock.GetValue(m_Id));
         break;
     case Tag::RELEASE:
@@ -94,8 +90,9 @@ bool LamportMutex::okeyCS()
         return false;
     LOG_WARN("First on the queue. ID: {}\n", m_Id);
     int myTicks = m_Clock.GetValue(m_Id);
-    for (auto& [id, ticks] : m_Clock)
+    for (auto id : m_CurrentComms)
     {
+        int ticks = m_Clock.GetValue(id);
         if (isGreater(myTicks, m_Id, ticks, id))    
             return false;
     }

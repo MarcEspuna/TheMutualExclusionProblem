@@ -26,8 +26,8 @@ void LWApp::run(Linker link)
     m_Name.append("\n");
     for (int i = 0; i < 10; i++)
     {
-        Sleep(2);
         laMutex.requestCS();
+        Sleep(1000);
         _write(1, m_Name.c_str(), (int)m_Name.size());
         laMutex.releaseCS();
     }

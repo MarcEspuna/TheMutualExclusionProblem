@@ -10,14 +10,13 @@ public:
 	/* Directly connects to server */
 	Client(int port);
 	/* Directly specify attributes */
+	Client(SOCKET socket);
+	/* Directly specify attributes */
 	Client(SOCKET socket, sockaddr_in details);
 
 	virtual ~Client();
 
 	void Connect(const unsigned int& port, const char* address = "127.0.0.1");
-	inline bool Connected() { return m_Connected; }
 
-private:
-	bool m_Connected;
 };
 
