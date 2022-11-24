@@ -15,9 +15,10 @@ HWApp::HWApp(const std::string& name)
 HWApp::~HWApp()
 {
     Socket::Finit();    // Finalize windows sockets
+    Log::EndLogging();
 }
 
-void HWApp::run(Linker link, const std::vector<std::string>& childPorts)
+void HWApp::run(Linker link, const std::vector<std::string>& childPorts, const char* mtxType)
 {
     LOG_INFO("Main app run\n");
     /* Not as leader */
@@ -36,19 +37,17 @@ void HWApp::run(Linker link, const std::vector<std::string>& childPorts)
     name2.append("-LW_2");
     name3.append("-LW_3");
 
-    LW_1.launch({name1.c_str(), childPorts[0].c_str(), std::to_string(link.serverPort).c_str()});
-    LW_2.launch({name2.c_str(), childPorts[1].c_str(), std::to_string(link.serverPort).c_str(),  childPorts[0].c_str()});
-    LW_3.launch({name3.c_str(), childPorts[2].c_str(), std::to_string(link.serverPort).c_str(), childPorts[0].c_str(), childPorts[1].c_str()});
+    LW_1.launch({name1.c_str(), mtxType, childPorts[0].c_str(), std::to_string(link.serverPort).c_str()});
+    LW_2.launch({name2.c_str(), mtxType, childPorts[1].c_str(), std::to_string(link.serverPort).c_str(), childPorts[0].c_str()});
+    LW_3.launch({name3.c_str(), mtxType, childPorts[2].c_str(), std::to_string(link.serverPort).c_str(), childPorts[0].c_str(), childPorts[1].c_str()});
 
     m_Name.append("\n");
     _write(1, m_Name.c_str(), (int)m_Name.size());
 
+    LOG_INFO("Waiting child processes.\n");
     LW_1.wait();
     LW_2.wait();
     LW_3.wait();
-
+    LOG_INFO("Realeasing CS to leader.\n");
     centMutex.releaseCS();
-
-
-
 }

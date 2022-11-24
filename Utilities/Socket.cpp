@@ -11,16 +11,18 @@ Socket::Socket()
     InitSocket();
 }
 
-Socket::Socket(const Socket& copy)
-	: s(copy.s), server(copy.server) {}
-
 Socket::Socket(SOCKET socket, const sockaddr_in& details)
 	: s(socket), server(details)
 {}
 
 Socket::~Socket()
 {
-	closesocket(s);
+	if (m_Connected)
+	{
+		gracefulClose();
+		close();
+		m_Connected = false;
+	}
 }
 
 bool Socket::InitSocket()
@@ -50,10 +52,14 @@ void Socket::Finit()
 	LOG_WARN("Finalization of windows sockets.\n");
 }
 
-void Socket::close() const
+void Socket::close()
 {
-	closesocket(s);
-	LOG_WARN("Closed socket, {}\n", s);
+	if (m_Connected)
+	{
+		closesocket(s);
+		m_Connected = false;
+		LOG_WARN("Closed socket, {}\n", s);
+	}
 }
 
 void Socket::gracefulClose() const

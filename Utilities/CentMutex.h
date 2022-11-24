@@ -8,7 +8,7 @@
 class CentMutex : public Lock, MsgHandler {
 public:
     CentMutex(const Linker& coms, bool leader);
-    ~CentMutex();
+    virtual ~CentMutex();
 
     void requestCS() override;    
     void releaseCS() override;

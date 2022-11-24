@@ -9,7 +9,7 @@ enum SocketType {
 class Socket {
 public:
     Socket();
-    Socket(const Socket& copy);
+    Socket(const Socket& copy) = delete;
     Socket(SOCKET socket, const sockaddr_in& details);
 
     virtual ~Socket();                          // Important to declare virtual destructor! 
@@ -36,7 +36,7 @@ public:
     static void Init();                 // Windows sockets initialization
     static void Finit();                // Finalization of windows sockets
 
-    void close() const;
+    void close();
     void gracefulClose() const;
 
     inline bool operator==(const Socket& other) { return s == other.s; }

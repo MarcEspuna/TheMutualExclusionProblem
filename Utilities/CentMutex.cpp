@@ -5,6 +5,7 @@ CentMutex::CentMutex(const Linker& coms, bool leader)
     : MsgHandler(coms), m_Leader(leader), m_Token(false), m_ChildFinishes(0)
 {
     if (leader)     m_Token = true;
+    // Wait for connections to finish
 }
 
 CentMutex::~CentMutex()
@@ -21,8 +22,8 @@ void CentMutex::requestCS()
 
 void CentMutex::releaseCS()
 {
-    SendMsgParent(Tag::RELEASE);
     m_Token = false;
+    SendMsgParent(Tag::RELEASE);
 }
 
 

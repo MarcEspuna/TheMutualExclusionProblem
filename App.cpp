@@ -25,11 +25,11 @@ void App::run()
 
     LOG_INFO("Starting HW_A");
     Process Hw_A("HW.exe");
-    Hw_A.launch({"8888", "8250", "HEAVY-WEIGHT-A", "8700", "8750", "8800"});
+    Hw_A.launch({"8888", "8250", "HEAVY-WEIGHT-A", MTX_LAMPORT, "8700", "8750", "8800"});
 
     LOG_INFO("Starting HW_B");
     Process Hw_B("HW.exe");
-    Hw_B.launch({"8889", "8250", "HEAVY-WEIGHT-B", "9090", "9091", "9092"});
+    Hw_B.launch({"8889", "8250", "HEAVY-WEIGHT-B", MTX_RA, "9090", "9091", "9092"});
 
     Hw_A.wait();
     Hw_B.wait();

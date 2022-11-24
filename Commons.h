@@ -26,3 +26,10 @@
 #include <unordered_map>
 #include <queue>
 #include <limits>
+
+#define MTX_LAMPORT "Lamport"
+#define MTX_RA      "RA"
+
+enum class MtxType{
+    LAMPORT, RICART_AGRAWALA
+};

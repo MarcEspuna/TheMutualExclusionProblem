@@ -14,13 +14,10 @@ public:
 
     void HandleMsg(int message, int src, Tag tag) override;          /* Used for current level processes */
     void HandleChildMsg(int message, int src, Tag tag) override;     /* Used for child porcesses */
-
-private:
-    bool okeyCS();
-
 private:
     int m_Myts;
     int m_NumOkey;
+    int m_NumFinished;
     LamportClock m_Clock;
     std::queue<int> m_PendingQ;
 };

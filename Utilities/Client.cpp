@@ -22,9 +22,7 @@ Client::Client(SOCKET socket, sockaddr_in details)
 {	
 }
 
-Client::~Client() {
-	LOG_WARN("Client closed, {}\n", s);
-}
+Client::~Client() { }
 
 void Client::Connect(const unsigned int& port, const char* address)
 {

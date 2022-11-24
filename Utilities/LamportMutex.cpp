@@ -26,10 +26,12 @@ LamportMutex::LamportMutex(const Linker& link)
 LamportMutex::~LamportMutex()
 {
     /* Notify all other porcesses that we have finished */
+    LOG_WARN("Deleting lamport mutex.\n");
     BroadcastMsg(Tag::END, 0);
     std::unique_lock<std::mutex> lck(mtx_Wait);
     /* Wait for all other processes to finish */
     cv_Wait.wait(lck, [&](){return !m_ConnReadyCount;});
+    LOG_WARN("All connections closed. Shutting down mutex.\n");
 }
 
 

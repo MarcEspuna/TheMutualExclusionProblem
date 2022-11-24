@@ -18,7 +18,7 @@ struct Linker
 class MsgHandler {
 public:
     MsgHandler(const Linker& comms);
-    ~MsgHandler();
+    virtual ~MsgHandler();
 
     void SendMsgParent(Tag tag, int msg = 0);
     void SendMsg(int dest, Tag tag, int msg = 0);

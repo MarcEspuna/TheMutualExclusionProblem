@@ -9,7 +9,7 @@
 class LamportMutex : public MsgHandler, Lock {
 public:
     LamportMutex(const Linker& link);
-    ~LamportMutex();
+    virtual ~LamportMutex();
 
     void requestCS() override;
     void releaseCS() override;

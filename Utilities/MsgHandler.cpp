@@ -52,7 +52,6 @@ MsgHandler::~MsgHandler()
 {
     LOG_TRACE("MsgHandler, closing all clients\n");
     closeClients();
-
     LOG_TRACE("MsgHandler, Server gracefulclose\n");
     m_Server.gracefulClose();
     m_Server.close();
@@ -61,6 +60,8 @@ MsgHandler::~MsgHandler()
     delete connectivity;
     LOG_TRACE("MsgHandler, close parent.\n");
     if (m_Parent.Connected())     m_Parent.gracefulClose();
+    for (auto& thread : threads)
+        thread.wait();
     LOG_WARN("MsgHandler, End.\n");
 }
 

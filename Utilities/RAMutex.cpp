@@ -1,33 +1,52 @@
 #include "RAMutex.h"
+#include "Log.h"
 #undef max
 
 static bool interestedCS(int otherTicks, int myTicks, int otherID, int myId);
 
 RAMutex::RAMutex(const Linker& link)
-    : MsgHandler(link), m_Myts(std::numeric_limits<int>::max()) 
+    : MsgHandler(link), m_NumOkey(0), m_Myts(std::numeric_limits<int>::max()), m_Clock(), m_NumFinished(0)
 {
+        /* Adding the connections to direct clock */
+    std::unique_lock<std::mutex> lck(mtx_Wait);
+    cv_Wait.wait(lck, [&](){return ConnectionSize() >=2;});
 
+    LOG_WARN("All connections accepted\n");
 
+    /* State others that we are ready */
+    BroadcastMsg(Tag::OK, 0);
+    /* Wait for others to be ready */
+    cv_Wait.wait(lck, [&](){return m_NumOkey >= 2;});
+    m_NumFinished = m_NumOkey;
+    LOG_WARN("All processes ready, moving on\n");
 }
 
 RAMutex::~RAMutex()
 {
-
+    LOG_WARN("Shutting down RA mutex.\n");
+    BroadcastMsg(Tag::END, 0);
+    std::unique_lock<std::mutex> lck(mtx_Wait);
+    LOG_TRACE("Waiting processes to finished.\n");
+    cv_Wait.wait(lck, [&](){return m_NumFinished == 0;});
+    LOG_TRACE("All processes finished.\n");
 }
 
 
 void RAMutex::requestCS()
 {
+    LOG_TRACE("Request CS.\n");
     m_Clock.Tick();
     m_Myts = m_Clock.GetValue();
     BroadcastMsg(Tag::REQUEST, m_Myts);
     m_NumOkey = 0;
-    std::unique_lock<std::mutex> lck;
-    cv_Wait.wait(lck, [&](){return m_NumOkey >= ConnectionSize()-1;});
+    std::unique_lock<std::mutex> lck(mtx_Wait);
+    cv_Wait.wait(lck, [&](){return m_NumOkey >= ConnectionSize();});
+    LOG_WARN("Entering mutex area.\n");
 }
 
 void RAMutex::releaseCS()
 {
+    LOG_INFO("Releasing CS.\n");
     m_Myts = std::numeric_limits<int>::max();
     while (!m_PendingQ.empty())
     {
@@ -39,6 +58,7 @@ void RAMutex::releaseCS()
 
 void RAMutex::HandleMsg(int msg, int src, Tag tag)
 {
+    LOG_TRACE("Msg received, tag, {}, ticks {}, my id {}, src id {}.\n", (char)tag, msg, m_Id, src);
     m_Clock.ReceiveAction(src, msg);
     switch (tag)
     {
@@ -50,6 +70,10 @@ void RAMutex::HandleMsg(int msg, int src, Tag tag)
         break;
     case Tag::OK:
         m_NumOkey++;
+        cv_Wait.notify_all();
+        break;
+    case Tag::END:
+        m_NumFinished--;
         cv_Wait.notify_all();
         break;
     default:

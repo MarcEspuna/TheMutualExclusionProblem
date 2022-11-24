@@ -12,9 +12,7 @@ Server::Server(unsigned int port)
 }
 
 Server::~Server()
-{
-	LOG_WARN("Server, Socket closed, {}\n", s);
-}
+{}
 
 SOCKET Server::acceptClient() const
 {
