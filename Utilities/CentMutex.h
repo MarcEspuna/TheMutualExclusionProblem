@@ -24,4 +24,7 @@ private:
 
     int m_ChildFinishes;
 
+    /* Mutex only used to make thread wait */
+    std::mutex mtx_Wait;
+    std::condition_variable cv_Wait;    
 };

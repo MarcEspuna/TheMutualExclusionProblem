@@ -26,10 +26,16 @@
 #include <unordered_map>
 #include <queue>
 #include <limits>
+#include <cassert>
+
+#define assertm(exp, msg) assert(((void)msg, exp))
 
 #define MTX_LAMPORT "Lamport"
 #define MTX_RA      "RA"
 
+
 enum class MtxType{
     LAMPORT, RICART_AGRAWALA
 };
+
+#define BIND_CALLBACK(fn) std::bind(&fn, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)

@@ -8,18 +8,25 @@ static bool isGreater(int entry1, int id1, int entry2, int id2);
 
 
 LamportMutex::LamportMutex(const Linker& link)
-   : MsgHandler(link), m_Clock(link.serverPort), m_ConnReadyCount(0)
+   : Lock(), MsgHandler(link), m_Clock(link.serverPort), m_ConnReadyCount(0)
 {
-    /* Adding the connections to direct clock */
-    std::unique_lock<std::mutex> lck(mtx_Wait);
-    cv_Wait.wait(lck, [&](){return ConnectionSize() >=2;});
+    /* Waitting for all connections */    
+    {
+        std::unique_lock<std::mutex> lck(mtx_Wait);
+        cv_Wait.wait(lck, [&](){return ConnectionSize() >=2;});
+    }
 
     LOG_WARN("All connections accepted\n");
 
     /* State others that we are ready */
     BroadcastMsg(Tag::OK, 0);
+    LOG_WARN("Broadcasted okey message.\n");
+
     /* Wait for others to be ready */
-    cv_Wait.wait(lck, [&](){return m_ConnReadyCount >= 2;});
+    {
+        std::unique_lock<std::mutex> lck(mtx_Wait);
+        cv_Wait.wait(lck, [&](){return m_ConnReadyCount >= 2;});
+    }
     LOG_WARN("All processes ready, moving on\n");
 }   
 

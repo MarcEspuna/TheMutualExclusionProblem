@@ -16,9 +16,15 @@ public:
     void HandleChildMsg(int message, int src, Tag tag) override;     /* Used for child porcesses */
 private:
     int m_Myts;
-    int m_NumOkey;
+    std::atomic<int> m_NumOkey;
     int m_NumFinished;
     LamportClock m_Clock;
     std::queue<int> m_PendingQ;
+
+    /* Mutex only used to make thread wait */
+    std::mutex mtx_Wait;
+    std::condition_variable cv_Wait;
+    std::condition_variable cv_Connect;
+    
 };
 

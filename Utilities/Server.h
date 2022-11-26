@@ -20,6 +20,8 @@ public:
 
 	/* Bind server to specific port and address(localhost if no address is specifed) */
 	void Bind(const unsigned int& port, const unsigned long& address = INADDR_ANY);
+
+
 private:
 	int m_Port;
 

@@ -20,6 +20,7 @@ Client::Client(SOCKET socket)
 Client::Client(SOCKET socket, sockaddr_in details)
 	: Socket(socket, details)
 {	
+	if (socket != 0) m_Connected = true;
 }
 
 Client::~Client() { }

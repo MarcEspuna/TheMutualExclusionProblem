@@ -24,5 +24,8 @@ private:
     DirectClock m_Clock;
     std::unordered_map<int, int> m_RequestQ;
     int m_ConnReadyCount;
-    
+
+    /* Mutex only used to make thread wait */
+    std::mutex mtx_Wait;
+    std::condition_variable cv_Wait;
 };

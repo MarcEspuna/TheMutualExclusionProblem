@@ -32,6 +32,8 @@ public:
 
     inline bool Connected() {return m_Connected; };
 
+    int IncommingRead();
+
     /* Initialization and finalization */
     static void Init();                 // Windows sockets initialization
     static void Finit();                // Finalization of windows sockets

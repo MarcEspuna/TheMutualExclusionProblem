@@ -12,6 +12,7 @@ struct Linker
 {
     int serverPort;                     // Own server port                    
     int parentPort;                     // Parent port
+    int totalConnections;               // Total number of connections
     std::vector<int> connections;       // Connections of the client
 };
 
@@ -31,12 +32,9 @@ public:
     virtual void HandleMsg(int message, int src, Tag tag) = 0;          /* Used for current level processes */
     virtual void HandleChildMsg(int message, int src, Tag tag) = 0;     /* Used for child porcesses */
 
-    std::vector<int>::iterator begin() { return m_CurrentComms.begin(); }
-    std::vector<int>::iterator end() { return m_CurrentComms.end(); }
-
 private:
+    int m_ParentId;                                 // Upper level connection
     Server m_Server;                              // Incomming connections                            
-    Client m_Parent;                              // Upper level connection
 
     std::unordered_map<int, Client> m_Sockets;
     std::vector<int> m_ChildComms;                // Child level socket ids
@@ -53,16 +51,20 @@ private:
 protected:
     int m_Id;  
     std::vector<int> m_CurrentComms;              // Current level socket ids
+
 protected:
-    inline int ConnectionSize() {return (int)m_CurrentComms.size(); }
+    int ConnectionSize();
     void IncommingConnections();
 private:
     /* For MshHandler syncronization */
     std::mutex mtx_CallbackWait;
 
-    void ClientService(int id, Socket* src, std::function<void(int, int, Tag)> callback);
+    void StartClientService(int port, std::function<void(int, int, Tag)> callback);
+    void ClientService(int id, std::function<void(int, int, Tag)> callback);
     /* Data management */
-    void addClient(int id);
+    int AddClient(int port, std::vector<int>* level = nullptr);
+    int AddClient(SOCKET sck, std::vector<int>* level= nullptr);
+    
     void eraseClient(int id);
     void closeClients();
 };

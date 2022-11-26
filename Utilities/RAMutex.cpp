@@ -5,18 +5,25 @@
 static bool interestedCS(int otherTicks, int myTicks, int otherID, int myId);
 
 RAMutex::RAMutex(const Linker& link)
-    : MsgHandler(link), m_NumOkey(0), m_Myts(std::numeric_limits<int>::max()), m_Clock(), m_NumFinished(0)
+    : Lock(), MsgHandler(link), m_NumOkey({0}), m_Myts(std::numeric_limits<int>::max()), m_Clock(), m_NumFinished(0)
 {
-        /* Adding the connections to direct clock */
-    std::unique_lock<std::mutex> lck(mtx_Wait);
-    cv_Wait.wait(lck, [&](){return ConnectionSize() >=2;});
+    /* Wait for all the connections */
+    {
+        std::unique_lock<std::mutex> lck(mtx_Wait);
+        cv_Connect.wait(lck, [&](){return m_CurrentComms.size() >=2;});
+    }
 
     LOG_WARN("All connections accepted\n");
 
     /* State others that we are ready */
     BroadcastMsg(Tag::OK, 0);
+
     /* Wait for others to be ready */
-    cv_Wait.wait(lck, [&](){return m_NumOkey >= 2;});
+    {
+        std::unique_lock<std::mutex> lck(mtx_Wait);
+        cv_Wait.wait(lck, [&](){return m_NumOkey >= 2;});
+    }
+
     m_NumFinished = m_NumOkey;
     LOG_WARN("All processes ready, moving on\n");
 }
@@ -40,7 +47,7 @@ void RAMutex::requestCS()
     BroadcastMsg(Tag::REQUEST, m_Myts);
     m_NumOkey = 0;
     std::unique_lock<std::mutex> lck(mtx_Wait);
-    cv_Wait.wait(lck, [&](){return m_NumOkey >= ConnectionSize();});
+    cv_Wait.wait(lck, [&](){return m_NumOkey >= m_CurrentComms.size();});
     LOG_WARN("Entering mutex area.\n");
 }
 
@@ -70,7 +77,7 @@ void RAMutex::HandleMsg(int msg, int src, Tag tag)
         break;
     case Tag::OK:
         m_NumOkey++;
-        cv_Wait.notify_all();
+        cv_Wait.notify_all();   
         break;
     case Tag::END:
         m_NumFinished--;
@@ -79,6 +86,7 @@ void RAMutex::HandleMsg(int msg, int src, Tag tag)
     default:
         break;
     }
+    cv_Connect.notify_all();
 }
 
 void RAMutex::HandleChildMsg(int msg, int src, Tag tag)

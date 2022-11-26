@@ -1,5 +1,6 @@
 #include <iostream>
 #include <crtdbg.h>
+#include "Commons.h"
 #include "App.h"
 #include "ProcessLauncher.h"
 

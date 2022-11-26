@@ -39,13 +39,13 @@ void LWApp::run()
     if (m_Mutex)
     {
         m_Name.append("\n");
-        for (int i = 0; i < 8; i++)
+        for (int i = 0; i < 20; i++)
         {
             m_Mutex->requestCS();
-            Sleep(400);
+            Sleep(2);
             _write(1, m_Name.c_str(), (int)m_Name.size());
             m_Mutex->releaseCS();
         }
     } 
-    LOG_INFO("Exit app run.\n")
+    LOG_INFO("Exit app run.\n");
 }

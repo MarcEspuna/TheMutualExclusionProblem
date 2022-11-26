@@ -55,7 +55,6 @@ void Server::Bind(const unsigned int& port, const unsigned long& address)
 	LOG_INFO("Server, Bind done.\n");
 }
 
-
 void Server::listenConn(const unsigned int& connectionCount) const
 {
 	listen(s, connectionCount);

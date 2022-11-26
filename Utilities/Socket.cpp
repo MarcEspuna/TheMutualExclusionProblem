@@ -46,6 +46,12 @@ void Socket::Init()
 	}
 }
 
+int Socket::IncommingRead()
+{
+	char check;
+	return recv(s, &check, 1, MSG_PEEK);
+}
+
 void Socket::Finit()
 {
 	WSACleanup();
