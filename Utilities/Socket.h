@@ -16,7 +16,7 @@ public:
 
     /* Transmition */
     template<typename T,size_t S>
-    void Send(const std::array<T, S> segment);
+    void Send(const std::array<T, S> segment) const;
 
     template<typename T, size_t S>
     int Receive(std::array<T, S>& buffer);
@@ -57,7 +57,7 @@ protected:
 
 /* Transmition Implementations */
 template<typename T,size_t S>
-void Socket::Send(const std::array<T, S> segment)
+void Socket::Send(const std::array<T, S> segment) const
 {
     send(s, (char*)segment.data(), sizeof(T)*S, 0);
 }

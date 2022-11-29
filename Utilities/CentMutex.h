@@ -5,7 +5,7 @@
 #include "MsgHandler.h"
 #include <queue>
 
-class CentMutex : public Lock, MsgHandler {
+class CentMutex : public Lock {
 public:
     CentMutex(const Linker& coms, bool leader);
     virtual ~CentMutex();
@@ -16,15 +16,11 @@ public:
     void HandleMsg(int message, int src, Tag tag) override;
     void HandleChildMsg(int message, int src, Tag tag) override;
 
+    void NotifyChildsToStart();
 private:
     bool m_Leader;
     bool m_Token;
 
     std::queue<int> pendingQ;
-
-    int m_ChildFinishes;
-
-    /* Mutex only used to make thread wait */
-    std::mutex mtx_Wait;
-    std::condition_variable cv_Wait;    
+    int m_ChildFinishes; 
 };

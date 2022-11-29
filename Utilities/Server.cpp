@@ -4,17 +4,26 @@
 
 Server::Server() {}
 
-Server::Server(unsigned int port)
-	: m_Port(port)
+Server::Server(int port)
+	: m_Port(port), m_Conectivity(nullptr)
 {
 	LOG_INFO("Server, Server socket initialized.\n");
 	Bind(port);	
+	m_Conectivity = new std::thread(&Server::IncommingConnectionsHandler, this);
 }
 
 Server::~Server()
-{}
+{ 
+	gracefulClose();
+	close();
+	if (m_Conectivity)
+	{
+		m_Conectivity->join();
+		delete m_Conectivity; 
+	}
+}
 
-SOCKET Server::acceptClient() const
+SOCKET Server::AcceptClient() const
 {
 	sockaddr_in cl;						// Struct used for client socket address
 	int c = sizeof(struct sockaddr_in);
@@ -55,7 +64,18 @@ void Server::Bind(const unsigned int& port, const unsigned long& address)
 	LOG_INFO("Server, Bind done.\n");
 }
 
-void Server::listenConn(const unsigned int& connectionCount) const
+void Server::ListenConn(const unsigned int& connectionCount) const
 {
 	listen(s, connectionCount);
+}
+
+void Server::IncommingConnectionsHandler()
+{
+	while(m_Connected)
+	{
+		ListenConn(1);
+		SOCKET client = AcceptClient();
+		if (client)	    IncommingConnection(client);
+		else m_Connected = false;
+	}
 }

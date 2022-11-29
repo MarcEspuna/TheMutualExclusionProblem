@@ -3,20 +3,26 @@
 #include "CentMutex.h"
 #include "ProcessLauncher.h"
 #include "HWApp.h"
+#include "App.h"
 
 /* Args: <exe> <parent port> <own port> <name> <mtx type> <child ports>*/
 int main(int argc, char** argv)
 {   
-    std::vector<std::string> childPorts;
+    std::cout << argv[3] << std::endl;
     Linker link;
+    MtxType mtxType;
     if (argc > 4)
     {
-        link.serverPort = atoi(argv[1]);
-        link.parentPort = atoi(argv[2]);
+        link.parentPort = atoi(argv[1]);
+        link.serverPort = atoi(argv[2]);
+        mtxType = (strcmp(argv[4], MTX_LAMPORT) == 0) ? MtxType::LAMPORT : MtxType::RICART_AGRAWALA; 
         for (int i = 5; i < argc; i++)
-            childPorts.push_back(argv[i]);
+            link.connections.push_back(atoi(argv[i]));
     }
-    HWApp app({argv[3]});
-    app.run(link, childPorts, argv[4]);
+
+    App::Create<HWApp>({argv[3]}, link, mtxType);
+    HWApp::Run();
+    HWApp::Destroy();
+    
     return 0;
 }

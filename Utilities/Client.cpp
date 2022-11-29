@@ -39,10 +39,11 @@ void Client::Connect(const unsigned int& port, const char* address)
 	//Connect to remote server
 	if (connect(s, (struct sockaddr*)&server, sizeof(server)) < 0)
 	{
-		LOG_ERROR("Client, error connecting to server with code: {}\n", WSAGetLastError());
+		LOG_ERROR("Client, error connecting to server with code: {}, port {}\n", WSAGetLastError(), port);
 	}
 	else{
-		LOG_INFO("Client, successfully connected to server\n");
+		assertm(m_Connected == false, "This client is already connected!");
+		LOG_INFO("Client, successfully connected to server, port {}\n", port);
 		m_Connected = true;
 	}
 }

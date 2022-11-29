@@ -1,11 +1,12 @@
 #include "RAMutex.h"
 #include "Log.h"
+#include "App.h"
 #undef max
 
 static bool interestedCS(int otherTicks, int myTicks, int otherID, int myId);
 
 RAMutex::RAMutex(const Linker& link)
-    : Lock(), MsgHandler(link), m_NumOkey({0}), m_Myts(std::numeric_limits<int>::max()), m_Clock(), m_NumFinished(0)
+    : Lock(link), m_NumOkey({0}), m_Myts(std::numeric_limits<int>::max()), m_Clock(), m_NumFinished(0)
 {
     /* Wait for all the connections */
     {
@@ -58,7 +59,7 @@ void RAMutex::releaseCS()
     while (!m_PendingQ.empty())
     {
         int id = m_PendingQ.front();
-        SendMsg(id, Tag::OK, m_Clock.GetValue());
+        App::SendMsg(id, Tag::OK, m_Clock.GetValue());
         m_PendingQ.pop();
     }
 }
@@ -71,7 +72,7 @@ void RAMutex::HandleMsg(int msg, int src, Tag tag)
     {
     case Tag::REQUEST:
         if (interestedCS(msg, m_Myts, src, m_Id))   
-            SendMsg(src, Tag::OK, m_Clock.GetValue());
+            App::SendMsg(src, Tag::OK, m_Clock.GetValue());
         else                                        
             m_PendingQ.push(src);
         break;

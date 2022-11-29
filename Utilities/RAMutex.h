@@ -4,7 +4,7 @@
 #include "MsgHandler.h"
 #include "LamportClock.h"
 
-class RAMutex : public MsgHandler, Lock{
+class RAMutex : public Lock{
 public:
     RAMutex(const Linker& link);
     ~RAMutex();
@@ -20,11 +20,5 @@ private:
     int m_NumFinished;
     LamportClock m_Clock;
     std::queue<int> m_PendingQ;
-
-    /* Mutex only used to make thread wait */
-    std::mutex mtx_Wait;
-    std::condition_variable cv_Wait;
-    std::condition_variable cv_Connect;
-    
 };
 

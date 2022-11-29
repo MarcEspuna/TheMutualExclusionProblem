@@ -1,6 +1,7 @@
 //#define ACTIVE_LOGGING
 
 #include "LamportMutex.h"
+#include "App.h"
 
 template<typename... Params>
 static void QueueErase(std::priority_queue<Params...>& queue, std::pair<int,int> element);
@@ -8,26 +9,14 @@ static bool isGreater(int entry1, int id1, int entry2, int id2);
 
 
 LamportMutex::LamportMutex(const Linker& link)
-   : Lock(), MsgHandler(link), m_Clock(link.serverPort), m_ConnReadyCount(0)
+   : Lock(link), m_Clock(link.serverPort), m_ConnReadyCount(0)
 {
     /* Waitting for all connections */    
-    {
-        std::unique_lock<std::mutex> lck(mtx_Wait);
-        cv_Wait.wait(lck, [&](){return ConnectionSize() >=2;});
-    }
+    std::unique_lock<std::mutex> lck(mtx_Wait);
+    cv_Wait.wait(lck, [&](){return m_CurrentComms.size() >=2;});
 
     LOG_WARN("All connections accepted\n");
-
-    /* State others that we are ready */
-    BroadcastMsg(Tag::OK, 0);
-    LOG_WARN("Broadcasted okey message.\n");
-
-    /* Wait for others to be ready */
-    {
-        std::unique_lock<std::mutex> lck(mtx_Wait);
-        cv_Wait.wait(lck, [&](){return m_ConnReadyCount >= 2;});
-    }
-    LOG_WARN("All processes ready, moving on\n");
+    App::SendMsg(m_ParentId,Tag::READY);  // Notify parent that we are ready
 }   
 
 LamportMutex::~LamportMutex()
@@ -71,7 +60,7 @@ void LamportMutex::HandleMsg(int message, int src, Tag tag)
     {
     case Tag::REQUEST:
         m_RequestQ[src] = message;        
-        SendMsg(src, Tag::ACK, m_Clock.GetValue(m_Id));
+        App::SendMsg(src, Tag::ACK, m_Clock.GetValue(m_Id));
         break;
     case Tag::RELEASE:
         m_RequestQ.erase(src);
@@ -81,6 +70,11 @@ void LamportMutex::HandleMsg(int message, int src, Tag tag)
         break;
     case Tag::END:  // Other process has finished it's execution
         m_ConnReadyCount--;
+        break;
+    case Tag::BEGIN:
+        m_Begin = true;
+        cv_Connect.notify_all();
+        break;
     default:
         break;
     }

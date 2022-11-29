@@ -35,7 +35,7 @@
 
 
 enum class MtxType{
-    LAMPORT, RICART_AGRAWALA
+    LAMPORT, RICART_AGRAWALA, CENT_MUTEX
 };
 
 #define BIND_CALLBACK(fn) std::bind(&fn, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3)
