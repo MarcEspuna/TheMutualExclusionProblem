@@ -15,9 +15,9 @@ int main(int argc, char** argv)
         for (int i = 6; i < argc; i++)
             link.connections.push_back(atoi(argv[i]));
 
-        LWApp::Create(argv[1], link, mtxType);
-        LWApp::Run();
-        LWApp::Destroy();
+        App::Create<LWApp>(argv[1], link, mtxType);
+        App::Run();
+        App::Destroy();     
     }
 
     return 0;

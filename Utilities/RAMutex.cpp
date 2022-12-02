@@ -6,37 +6,12 @@
 static bool interestedCS(int otherTicks, int myTicks, int otherID, int myId);
 
 RAMutex::RAMutex(const Linker& link)
-    : Lock(link), m_NumOkey({0}), m_Myts(std::numeric_limits<int>::max()), m_Clock(), m_NumFinished(0)
+    : Lock(link), m_NumOkey({0}), m_Myts(std::numeric_limits<int>::max()), m_Clock()
 {
-    /* Wait for all the connections */
-    {
-        std::unique_lock<std::mutex> lck(mtx_Wait);
-        cv_Connect.wait(lck, [&](){return m_CurrentComms.size() >=2;});
-    }
-
-    LOG_WARN("All connections accepted\n");
-
-    /* State others that we are ready */
-    BroadcastMsg(Tag::OK, 0);
-
-    /* Wait for others to be ready */
-    {
-        std::unique_lock<std::mutex> lck(mtx_Wait);
-        cv_Wait.wait(lck, [&](){return m_NumOkey >= 2;});
-    }
-
-    m_NumFinished = m_NumOkey;
-    LOG_WARN("All processes ready, moving on\n");
 }
 
 RAMutex::~RAMutex()
 {
-    LOG_WARN("Shutting down RA mutex.\n");
-    BroadcastMsg(Tag::END, 0);
-    std::unique_lock<std::mutex> lck(mtx_Wait);
-    LOG_TRACE("Waiting processes to finished.\n");
-    cv_Wait.wait(lck, [&](){return m_NumFinished == 0;});
-    LOG_TRACE("All processes finished.\n");
 }
 
 
@@ -80,14 +55,12 @@ void RAMutex::HandleMsg(int msg, int src, Tag tag)
         m_NumOkey++;
         cv_Wait.notify_all();   
         break;
-    case Tag::END:
-        m_NumFinished--;
-        cv_Wait.notify_all();
+    case Tag::BEGIN:
+        cv_Connect.notify_all();
         break;
     default:
         break;
     }
-    cv_Connect.notify_all();
 }
 
 void RAMutex::HandleChildMsg(int msg, int src, Tag tag)

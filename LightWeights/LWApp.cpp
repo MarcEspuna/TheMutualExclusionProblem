@@ -13,11 +13,14 @@
  * @param mtxType 
  */
 LWApp::LWApp(const std::string& name, const Linker& link,  MtxType mtxType)
-    : m_Name(name), m_Id(link.serverPort), m_Mutex(nullptr), Server(link.serverPort), m_ClientsToLock(true), m_Parent(link.parentPort)
+    : App(name, link, mtxType)
 {
-    assertm(m_Parent.Connected(), "Could not connect to parent!");
-    m_Parent.Send(std::array<int,1>{m_Id});
-    /* Init windows sockets */
+    LOG_TRACE("Sub app constructor called.\n");
+    /* Connect to all specifed connections */
+    for (int port: link.connections)
+        AddClient(port);
+    
+    /* Start specified mutex */
     switch (mtxType)
     {
         case MtxType::LAMPORT:
@@ -35,61 +38,51 @@ LWApp::LWApp(const std::string& name, const Linker& link,  MtxType mtxType)
 LWApp::~LWApp()
 {
     delete m_Mutex;
-    Log::EndLogging();
 }
 
-void LWApp::Create(const std::string& name, const Linker& link, MtxType mtxType)
-{
-    if (!lwApp) {
-        Log::CreateLogger(name);
-        Socket::Init();
-        lwApp = new LWApp(name, link, mtxType); 
-    }
-}
-
-void LWApp::Destroy()
-{
-    delete lwApp; 
-    Socket::Finit(); 
-    Log::EndLogging();
-}
+static std::mutex mtx_ConnWait;
+static std::condition_variable cv_ConnWait;
 
 void LWApp::run()
 {
-    LOG_INFO("Main app run\n");
-    /* Not as leader */
-
-    // Wait for begin of parent
-
-    if (m_Mutex)
+    /* Notify parent that we are ready */
+    LOG_TRACE("Waitting cons\n");
     {
-        m_Name.append("\n");
+        std::unique_lock<std::mutex> lck(mtx_ConnWait);
+        cv_ConnWait.wait(lck, [&](){return App::GetConnSize() >= 3;});
+    }
+    LOG_TRACE("Notifying parent that we are ready\n");
+    App::SendMsg(m_ParentId, Tag::READY, 0);
+    LOG_INFO("Waiting for begin\n");
+    std::array<char, 5> data;
+    App::ReceiveMsg(m_ParentId, data);
+    LOG_TRACE("Something received!\n");
+    LOG_ASSERT(App::GetConnSize() == 3, "Wrong number of connections! Conn: {}\n", App::GetConnSize());
+    // Wait for begin of parent
+    m_Name.append("\n");
+    while (((Tag)data[0]) == Tag::BEGIN)
+    {
+        LOG_TRACE("Begin recived.\n");
         for (int i = 0; i < 5; i++)
         {
             m_Mutex->requestCS();
-            Sleep(1000);
+            Sleep(2);
             _write(1, m_Name.c_str(), (int)m_Name.size());
             m_Mutex->releaseCS();
         }
-    } 
+        App::SendMsg(m_ParentId, Tag::READY, 0);
+        App::ReceiveMsg(m_ParentId, data);
+    }
+    
     // Loop until terminate is received from parent
-
     LOG_INFO("Exit app run.\n");
 }
 
 void LWApp::IncommingConnection(SOCKET client)
 {
-    if (m_ClientsToLock)    
-    {
-        //int clId = AddClient(client);
-        //m_Mutex->AddClient(clId);
-        //m_Mutex->StartClientService(clId);
-    }else 
-    {
-        std::array<int,1> sckId;
-        Socket::Receive(client, sckId);
-        assertm(sckId[0] != 0, "Wrong socket id!");
-        m_Childs.try_emplace(sckId[0], client);
-        LOG_TRACE("Connection added from {}, my id {}\n", sckId[0], m_Id);
-    }
+    int clientId = AddClient(client);
+    m_Mutex->AddClient(clientId);
+    m_Mutex->StartClientService(clientId);
+    LOG_TRACE("Connection size before notify: {}\n", App::GetConnSize());
+    cv_ConnWait.notify_all();
 }

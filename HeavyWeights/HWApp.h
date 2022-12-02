@@ -18,6 +18,7 @@ private:
 
     int m_ChildFinishes;
 
+    std::mutex mtx_Data;
     std::mutex mtx_Childs;
     std::condition_variable cv_Childs;
 

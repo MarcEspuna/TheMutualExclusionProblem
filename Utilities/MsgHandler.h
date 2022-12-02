@@ -30,14 +30,7 @@ public:
     MsgHandler(const Linker& comms);
     virtual ~MsgHandler();
 
-    void BroadcastMsg(Tag tag, int msg = 0);
-    void BroadcastMsgChilds(Tag tag, int msg = 0);
-
-    void WaitForNeightbours(int count);
-    void WaitForChilds(int count);
-    void WaitForParent();
-    
-    void NotifyEndToParent();  
+    void BroadcastMsg(Tag tag, int msg);
 
     /* Pure virtual function */
     virtual void HandleMsg(int message, int src, Tag tag) = 0;          /* Used for current level processes */
@@ -57,7 +50,7 @@ protected:
     std::condition_variable cv_Connect;
 private:
     /* Incomming connections thread */
-    std::vector<std::future<void>> threads;
+    std::vector<std::thread*> threads;
     
     std::mutex mtx_DataLock;                        // For data management 
 

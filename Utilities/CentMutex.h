@@ -15,8 +15,7 @@ public:
 
     void HandleMsg(int message, int src, Tag tag) override;
     void HandleChildMsg(int message, int src, Tag tag) override;
-
-    void NotifyChildsToStart();
+    
 private:
     bool m_Leader;
     bool m_Token;

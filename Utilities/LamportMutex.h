@@ -23,5 +23,4 @@ private:
 private:
     DirectClock m_Clock;
     std::unordered_map<int, int> m_RequestQ;
-    int m_ConnReadyCount;
 };

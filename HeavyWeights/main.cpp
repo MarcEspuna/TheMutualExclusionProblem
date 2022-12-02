@@ -5,10 +5,12 @@
 #include "HWApp.h"
 #include "App.h"
 
+//char* argv[] = { "nothing", "8250", "8888","HEAVY-WEIGHT-A", MTX_LAMPORT, "8700", "8750", "8800" };
+
 /* Args: <exe> <parent port> <own port> <name> <mtx type> <child ports>*/
 int main(int argc, char** argv)
 {   
-    std::cout << argv[3] << std::endl;
+    //int argc = 8;
     Linker link;
     MtxType mtxType;
     if (argc > 4)

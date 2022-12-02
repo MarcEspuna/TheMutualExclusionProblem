@@ -17,7 +17,7 @@ public:
 private:
     int m_Myts;
     std::atomic<int> m_NumOkey;
-    int m_NumFinished;
+
     LamportClock m_Clock;
     std::queue<int> m_PendingQ;
 };

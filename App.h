@@ -14,11 +14,12 @@ public:
     static int IncommingReadFrom(int id);
     
     template<typename T, int S>
-    static void ReceiveMsg(int src, std::array<T,S>& data);
+    static int ReceiveMsg(int src, std::array<T,S>& data);
     static void SendMsg(int dest, Tag tag, int msg = 0);
     
     static void RemoveClient(int id);
 
+    static size_t GetConnSize() { return s_App->m_Sockets.size(); }
 protected:
     App(const std::string& name, const Linker& link, MtxType mtxType);
     virtual ~App();
@@ -32,6 +33,7 @@ protected:
     int AddClient(int port);
 protected:
     int m_Id;
+    int m_ParentId;
     std::string m_Name;
     Lock* m_Mutex;
 
@@ -56,8 +58,8 @@ void App::Create(const std::string& name, const Linker& link, MtxType mtxType)
 }
 
 template<typename T, int S>
-void App::ReceiveMsg(int src, std::array<T,S>& data) 
+int App::ReceiveMsg(int src, std::array<T,S>& data) 
 { 
     assertm(s_App->m_Sockets.find(src) != s_App->m_Sockets.end(), "Socket not found!"); 
-    s_App->m_Sockets[src].Receive(data);    
+    return s_App->m_Sockets.at(src).Receive(data);    
 }

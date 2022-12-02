@@ -8,28 +8,21 @@ public:
 
     void wait();
     
-    template<class T>
-    int launch(std::initializer_list<T> list) {
-        char* strArgs = new char[strlen(path)+1];
-        strcpy_s(strArgs, strlen(path)+1, path);
-        
-        for (const auto& arg : list)
-        {
-            int size = (int)strlen(strArgs)+(int)strlen(arg)+2;
-            strArgs = (char*)realloc(strArgs, size);
-            sprintf_s(strArgs, size,"%s %s", strArgs, arg);
-        }
+    int launch(const char* args) {
+        char* strArgs = new char[strlen(args)+1];
+        strcpy_s(strArgs,strlen(args)+1, args);
 
-        LPTSTR cmdArgs = strArgs;
-        int err = CreateProcess(path, cmdArgs, NULL, NULL, TRUE, 0, NULL, NULL, &info, &processInfo);
-        delete cmdArgs;
+        arguments.push_back(strArgs);
+        int err = CreateProcess(NULL, arguments.back(), NULL, NULL, TRUE, 0, NULL, NULL, &info, &processInfo);
+        
         if (err)    return 1;
         return 0;
     }   
 
 private:
     char* path;                             // Executable path
-    STARTUPINFO info={sizeof(info)};
+    STARTUPINFO info = {sizeof(info)};
     PROCESS_INFORMATION processInfo;
+    std::vector<LPTSTR> arguments;
 
 };

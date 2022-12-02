@@ -48,6 +48,10 @@ void Socket::Init()
 
 int Socket::IncommingRead()
 {
+	//FD_SET rd;
+	//FD_ZERO(&rd);
+	//FD_SET(s, &rd);
+	//return select((int)s+1, &rd, NULL, NULL, NULL);
 	char check;
 	return recv(s, &check, 1, MSG_PEEK);
 }

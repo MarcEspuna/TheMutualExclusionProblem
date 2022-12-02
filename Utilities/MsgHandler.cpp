@@ -1,6 +1,5 @@
 #include "MsgHandler.h"
 #include "App.h"
-//#define ACTIVE_LOGGING
 #include "Log.h"
 
 template<typename T>
@@ -35,7 +34,7 @@ MsgHandler::~MsgHandler()
         App::RemoveClient(id);
     App::RemoveClient(m_ParentId);
     for (auto& thread : threads)
-        thread.wait();
+        thread->join();
     LOG_WARN("MsgHandler, End.\n");
 }
 
@@ -46,9 +45,11 @@ void MsgHandler::ClientService(int id, std::function<void(int, int, Tag)> handle
     bool connected = true;
     while (connected)
     {
+        LOG_INFO("Listening from {}", id);
         switch (App::IncommingReadFrom(id))
         {
         case 1:     // Incomming read - > <Tag:1 byte(char)> <data: 4 bytes(int)>s
+            LOG_INFO("Client service incomming read.\n");
             std::array<char, 5> data;                           // Reception buffer
             App::ReceiveMsg(id, data);
             {
@@ -69,49 +70,20 @@ void MsgHandler::ClientService(int id, std::function<void(int, int, Tag)> handle
             break;
         } 
     }
-    LOG_TRACE("ClientService, removing client.\n");
+    LOG_WARN("ClientService, removing client.\n");
     App::RemoveClient(id);
-    eraseFromVector(id, m_CurrentComms);
 }
 
 
 void MsgHandler::BroadcastMsg(Tag tag, int msg)
 {
+    std::lock_guard<std::mutex> lck(mtx_DataLock);
     LOG_WARN("Broadcasting msg tag, {}\n", (char)tag);
     for (int i = 0; i < m_CurrentComms.size(); i++)
         App::SendMsg(m_CurrentComms[i], tag, msg); 
 }
 
-void MsgHandler::BroadcastMsgChilds(Tag tag, int msg)
-{
-    LOG_WARN("Broadcasting msg tag, {}\n", (char)tag);
-    //for (int i = 0; i < m_ChildComms.size(); i++)
-    //    SendMsg(m_ChildComms[i], tag, msg); 
-}
 
-void MsgHandler::WaitForChilds(int count)
-{
-    std::unique_lock<std::mutex> lck(mtx_Connect);
-    cv_Connect.wait(lck, [&](){return m_ChildFinishes >= count;});
-}
-
-void MsgHandler::WaitForNeightbours(int count)
-{
-    std::unique_lock<std::mutex> lck(mtx_Connect);
-    cv_Connect.wait(lck, [&]() {return m_CurrentComms.size() >= count; });
-}
-
-void MsgHandler::WaitForParent()
-{
-    std::unique_lock<std::mutex> lck(mtx_Connect);
-    cv_Connect.wait(lck, [&]() { return m_Begin; });
-}
-
-void MsgHandler::NotifyEndToParent()
-{
-    m_Begin = false;
-    App::SendMsg(m_ParentId, Tag::READY);
-}
 
 void MsgHandler::AddClient(int id)
 {
@@ -121,8 +93,7 @@ void MsgHandler::AddClient(int id)
 
 void MsgHandler::StartClientService(int port)
 {
-    std::lock_guard<std::mutex> lck(mtx_DataLock);
-    threads.push_back(std::async(std::launch::async, &MsgHandler::ClientService, this, port, BIND_CALLBACK(MsgHandler::HandleMsg)));
+    threads.push_back(new std::thread(&MsgHandler::ClientService, this, port, BIND_CALLBACK(MsgHandler::HandleMsg)));
 }
 
 void MsgHandler::eraseClient(int id)

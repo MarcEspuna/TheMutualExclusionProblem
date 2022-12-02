@@ -58,6 +58,7 @@ void Server::Bind(const unsigned int& port, const unsigned long& address)
 	if (bind(s, (struct sockaddr*)&server, sizeof(server)) == SOCKET_ERROR)
 	{
 		LOG_ERROR("Server, bind failed, port {}, error code : {}\n", port, WSAGetLastError());
+		assertm(false, "Server failed to bind.\n");
 		return;
 	}
 	m_Connected = true;
@@ -78,4 +79,5 @@ void Server::IncommingConnectionsHandler()
 		if (client)	    IncommingConnection(client);
 		else m_Connected = false;
 	}
+	LOG_INFO("Server, id, {} exiting incomming connections\n", m_Port);
 }

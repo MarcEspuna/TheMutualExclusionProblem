@@ -1,5 +1,3 @@
-//#define ACTIVE_LOGGING
-
 #include "LamportMutex.h"
 #include "App.h"
 
@@ -9,25 +7,15 @@ static bool isGreater(int entry1, int id1, int entry2, int id2);
 
 
 LamportMutex::LamportMutex(const Linker& link)
-   : Lock(link), m_Clock(link.serverPort), m_ConnReadyCount(0)
+   : Lock(link), m_Clock(link.serverPort)
 {
-    /* Waitting for all connections */    
-    std::unique_lock<std::mutex> lck(mtx_Wait);
-    cv_Wait.wait(lck, [&](){return m_CurrentComms.size() >=2;});
 
-    LOG_WARN("All connections accepted\n");
-    App::SendMsg(m_ParentId,Tag::READY);  // Notify parent that we are ready
 }   
 
 LamportMutex::~LamportMutex()
 {
     /* Notify all other porcesses that we have finished */
     LOG_WARN("Deleting lamport mutex.\n");
-    BroadcastMsg(Tag::END, 0);
-    std::unique_lock<std::mutex> lck(mtx_Wait);
-    /* Wait for all other processes to finish */
-    cv_Wait.wait(lck, [&](){return !m_ConnReadyCount;});
-    LOG_WARN("All connections closed. Shutting down mutex.\n");
 }
 
 
@@ -64,12 +52,6 @@ void LamportMutex::HandleMsg(int message, int src, Tag tag)
         break;
     case Tag::RELEASE:
         m_RequestQ.erase(src);
-        break;
-    case Tag::OK:   // Other process has all it's connections ready
-        m_ConnReadyCount++;
-        break;
-    case Tag::END:  // Other process has finished it's execution
-        m_ConnReadyCount--;
         break;
     case Tag::BEGIN:
         m_Begin = true;
