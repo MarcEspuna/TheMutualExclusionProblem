@@ -43,6 +43,7 @@ void LamportMutex::releaseCS()
 void LamportMutex::HandleMsg(int message, int src, Tag tag)
 {
     LOG_TRACE("Message, tag: {}, ticks {}, from {}\n", (char)tag, message, src);
+    std::lock_guard<std::mutex> lck(mtx_RequestQ);
     m_Clock.RecieveAction(src,message);
     switch (tag)
     {
@@ -74,6 +75,7 @@ bool LamportMutex::okeyCS()
 {   
     /* We look if we are the best candidate in the priority queue */
     LOG_WARN("Checking CS. ID: {}\n", m_Id);
+    std::lock_guard<std::mutex> lck(mtx_RequestQ);
     if (m_RequestQ.find(m_Id) != m_RequestQ.end())
     {
         int myTicks = m_RequestQ[m_Id];

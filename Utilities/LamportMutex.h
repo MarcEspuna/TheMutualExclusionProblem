@@ -23,4 +23,6 @@ private:
 private:
     DirectClock m_Clock;
     std::unordered_map<int, int> m_RequestQ;
+
+    std::mutex mtx_RequestQ;
 };

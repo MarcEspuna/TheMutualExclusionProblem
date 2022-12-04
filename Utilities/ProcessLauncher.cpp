@@ -1,12 +1,9 @@
 #include "ProcessLauncher.h"
 
 
-Process::Process(const char* execPath)
+Process::Process()
 : info({sizeof(info)})
 {
-    path = new char[strlen(execPath)+1];
-    strcpy_s(path, strlen(execPath)+1, execPath);
-
     ZeroMemory( &info, sizeof(info) );
     info.cb = sizeof(info);
     ZeroMemory( &processInfo, sizeof(processInfo) );
@@ -14,7 +11,6 @@ Process::Process(const char* execPath)
 
 Process::~Process()
 {
-    delete path;
     for (auto arg : arguments)
         delete arg;
 }

@@ -14,7 +14,7 @@ private:
 
 };
 
-#define ACTIVE_LOGGING  
+//#define ACTIVE_LOGGING  
 #ifdef ACTIVE_LOGGING
     #define LOG_TRACE(...)              Log::GetLogger()->trace(__VA_ARGS__)
     #define LOG_INFO(...)               Log::GetLogger()->info(__VA_ARGS__)

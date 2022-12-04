@@ -5,6 +5,8 @@
 #include "Log.h"
 #include "io.h"
 
+static const char* consoleMsg = "Soc el proces lightweight: ";
+
 /**
  * @brief The app constructor will bind a server and attempt to connect to it's specified parent server
  * 
@@ -13,13 +15,8 @@
  * @param mtxType 
  */
 LWApp::LWApp(const std::string& name, const Linker& link,  MtxType mtxType)
-    : App(name, link, mtxType)
-{
-    LOG_TRACE("Sub app constructor called.\n");
-    /* Connect to all specifed connections */
-    for (int port: link.connections)
-        AddClient(port);
-    
+    : App(name, link, mtxType), test(link)
+{    
     /* Start specified mutex */
     switch (mtxType)
     {
@@ -33,6 +30,12 @@ LWApp::LWApp(const std::string& name, const Linker& link,  MtxType mtxType)
             LOG_ERROR("Unsuported mutex type.\n");
             break;
     }
+    /* Start handling incomming connections */
+    StartConnectionHandling();
+    
+    /* Connect to all specifed connections */
+    for (int port: link.connections)
+        AddClient(port);
 }
 
 LWApp::~LWApp()
@@ -45,11 +48,17 @@ static std::condition_variable cv_ConnWait;
 
 void LWApp::run()
 {
+    for (int port : test.connections)
+    {
+        m_Mutex->AddClient(port);                                   // Creates a client and connects to specified port server                                     
+        m_Mutex->StartClientService(port);                          // Starts the thread that handles receptions on this particular clien
+    }
+
     /* Notify parent that we are ready */
     LOG_TRACE("Waitting cons\n");
     {
         std::unique_lock<std::mutex> lck(mtx_ConnWait);
-        cv_ConnWait.wait(lck, [&](){return App::GetConnSize() >= 3;});
+        cv_ConnWait.wait(lck, [&](){return App::GetConnSize() >= test.totalConnections;});
     }
     LOG_TRACE("Notifying parent that we are ready\n");
     App::SendMsg(m_ParentId, Tag::READY, 0);
@@ -57,17 +66,19 @@ void LWApp::run()
     std::array<char, 5> data;
     App::ReceiveMsg(m_ParentId, data);
     LOG_TRACE("Something received!\n");
-    LOG_ASSERT(App::GetConnSize() == 3, "Wrong number of connections! Conn: {}\n", App::GetConnSize());
     // Wait for begin of parent
-    m_Name.append("\n");
+    std::string prompt(consoleMsg);
+    prompt.append(m_Name);
+    prompt.append("\n");
+
     while (((Tag)data[0]) == Tag::BEGIN)
     {
         LOG_TRACE("Begin recived.\n");
-        for (int i = 0; i < 5; i++)
+        for (int i = 0; i < 3; i++)
         {
             m_Mutex->requestCS();
             Sleep(2);
-            _write(1, m_Name.c_str(), (int)m_Name.size());
+            _write(1, prompt.c_str(), (int)prompt.size());
             m_Mutex->releaseCS();
         }
         App::SendMsg(m_ParentId, Tag::READY, 0);

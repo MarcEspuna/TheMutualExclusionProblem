@@ -1,5 +1,6 @@
 #pragma once
 #include "Commons.h"
+#include "Log.h"
 
 enum SocketType {
     SERVER, CLIENT, UNKNOWN
@@ -59,7 +60,8 @@ protected:
 template<typename T,size_t S>
 void Socket::Send(const std::array<T, S> segment) const
 {
-    send(s, (char*)segment.data(), sizeof(T)*S, 0);
+    if (send(s, (char*)segment.data(), sizeof(T)*S, 0) == SOCKET_ERROR)
+        LOG_ASSERT(false, "Error on send! Error code {}", WSAGetLastError());
 }
 template<typename T, size_t S>
 int Socket::Receive(std::array<T, S>& buffer)

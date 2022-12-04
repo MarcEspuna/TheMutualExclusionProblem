@@ -4,49 +4,26 @@
 #include "Log.h"
 #include "io.h"
 
+static const char* consoleMsg = "Soc el proces heavyweight: ";
 static void printProcess(std::string pName);
 
 HWApp::HWApp(const std::string& name, const Linker& link, MtxType mtxType)
     : App(name, link, mtxType), m_ChildFinishes(0)
-{
-    /* Init windows sockets */
-    Linker centLink = link;
-    centLink.connections.clear();   
+{ 
 
-    m_Mutex = Lock::Create<CentMutex>(centLink, false);         // Not as leader
-    LOG_INFO("Starting mutex client service on parent.\n");
+    m_Mutex = Lock::Create<CentMutex>(link, false);         // Not as leader
 
     LOG_INFO("Creating lightweight processes\n");
     m_Processes.reserve(5);
-    for (int i = 0; i < 3; i++)
-        m_Processes.emplace_back("C:/Users/marce/Documents/UNIVERSITAT/ProjArqDist/Sessio2/ProcessTest/build/Debug/LW.exe");
 
-    std::string name1 = m_Name;
-    std::string name2 = m_Name;
-    std::string name3 = m_Name;
-
-    name1.append("-LW_1");
-    name2.append("-LW_2");
-    name3.append("-LW_3");
-
-    std::vector<std::string> childPorts = link.GetStrConnections();
-    std::string strMtxType = (mtxType == MtxType::LAMPORT) ? std::string(MTX_LAMPORT) : std::string(MTX_RA); 
-    LOG_INFO("Launching processes\n");
-    std::string p1; p1.append("LW.exe"); p1.append(" "); p1.append(name1); p1.append(" "); p1.append(strMtxType);p1.append(" ");
-                    p1.append(childPorts[0]); p1.append(" "); p1.append(std::to_string(m_Id)); p1.append(" "); p1.append("2");
-
-    std::string p2; p2.append("LW.exe"); p2.append(" "); p2.append(name2); p2.append(" "); p2.append(strMtxType);p2.append(" ");
-                    p2.append(childPorts[1]); p2.append(" "); p2.append(std::to_string(m_Id)); p2.append(" "); p2.append("2"); p2.append(" "); p2.append(childPorts[0]);
-
-    std::string p3; p3.append("LW.exe"); p3.append(" "); p3.append(name3); p3.append(" "); p3.append(strMtxType); p3.append(" ");
-                    p3.append(childPorts[2]); p3.append(" "); p3.append(std::to_string(m_Id)); p3.append(" "); p3.append("2"); p3.append(" "); p3.append(childPorts[0]); p3.append(" "); p3.append(childPorts[1]);
-    std::cout << p1 << std::endl;
-    std::cout << p2 << std::endl;
-    std::cout << p3 << std::endl;
-    //              <name>    <mtx type>  <child server port>       <parent port(me)>                  <connection count>    <ports for the child to connect to>
-    m_Processes[0].launch( p1.c_str() );
-    m_Processes[1].launch( p2.c_str() );
-    m_Processes[2].launch( p3.c_str() );
+    std::vector<std::string> arguments = link.GetProcessArgs("LW.exe", mtxType);
+    for (const std::string& arg : arguments)
+    {
+        std::cout << arg << std::endl;
+        m_Processes.emplace_back();
+        m_Processes.back().launch(arg.c_str());
+    }
+    StartConnectionHandling();
 }
 
 HWApp::~HWApp()
@@ -58,21 +35,19 @@ void HWApp::run()
 {
     m_Mutex->StartClientService(m_ParentId);
     
-    std::string name(m_Name);
-    name.append("\n");
-    LOG_TRACE("Main app run\n");
+    std::string prompt(consoleMsg);
+    prompt.append(m_Name);
+
     /* *** Child Connection startup *** */
     LOG_TRACE("Waiting for childs to be ready\n");
-    WaitForChilds(3);   
-    for (int i = 0; i < 5; i++)
+    WaitForChilds();   
+    for (int i = 0; i < 20; i++)
     {
         m_Mutex->requestCS();                           // Request Token and wait for Tocken
-        std::cout << name;
-        //Sleep(100);
-        LOG_TRACE("Notifying childs to start.\n");
+        printProcess(prompt);
         NotifyChildsToStart();                          // Send start to all childs
         LOG_TRACE("Waiting for childs to be ready\n");
-        WaitForChilds(3);                               // Wait for all childs to finish
+        WaitForChilds();                               // Wait for all childs to finish
         LOG_TRACE("Releasing.\n");
         m_Mutex->releaseCS();                           // Return token to leader
     }
@@ -95,11 +70,11 @@ void HWApp::IncommingConnection(SOCKET client)          // This connections are 
     notifyClientReady.detach();
 }
 
-void HWApp::WaitForChilds(int count)
+void HWApp::WaitForChilds()
 {
     std::unique_lock<std::mutex> lck(mtx_Childs);
     LOG_TRACE("Start wait.\n");
-    cv_Childs.wait(lck, [&](){return m_ChildFinishes >= count;});
+    cv_Childs.wait(lck, [&](){return m_ChildFinishes >= m_Processes.size();});
     LOG_TRACE("Stoped waiting!\n");
 }
 

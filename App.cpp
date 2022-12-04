@@ -25,7 +25,6 @@ void App::SendMsg(int desc, Tag tag, int msg)
     buffer[0] = (char)tag;
     memcpy_s(&buffer[1], sizeof(int), &msg, sizeof(int));
     s_App->m_Sockets.at(desc).Send(buffer);
-    LOG_INFO("Msg sent.\n");
 }
 
 int App::IncommingReadFrom(int id) 
@@ -39,7 +38,6 @@ void App::RemoveClient(int id)
     std::lock_guard<std::mutex> lck(s_App->mtx_DataLock);
     if (s_App->m_Sockets.find(id) != s_App->m_Sockets.end()) 
         s_App->m_Sockets.erase(id);
-    else LOG_WARN("Erasing non existent client.\n");
 }
 
 int App::AddClient(SOCKET sck)

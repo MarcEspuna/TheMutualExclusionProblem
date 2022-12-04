@@ -9,7 +9,6 @@ Client::Client() {}
 
 Client::Client(int port)
 {
-	LOG_INFO("Initialized client socket.\n");
 	Connect(port);
 }
 
@@ -21,6 +20,7 @@ Client::Client(SOCKET socket, sockaddr_in details)
 	: Socket(socket, details)
 {	
 	if (socket != 0) m_Connected = true;
+	else 			assertm(false, "Creating invalid socket!");
 }
 
 Client::~Client() { }

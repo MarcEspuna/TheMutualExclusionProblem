@@ -15,4 +15,6 @@ private:
 private:
     void IncommingConnection(SOCKET client) override;
     void run();
+
+    Linker test;
 };

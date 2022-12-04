@@ -20,8 +20,8 @@ void RAMutex::requestCS()
     LOG_TRACE("Request CS.\n");
     m_Clock.Tick();
     m_Myts = m_Clock.GetValue();
+    m_NumOkey = 0;                          // Important to put it to 0 BEFORE broadcasting request
     BroadcastMsg(Tag::REQUEST, m_Myts);
-    m_NumOkey = 0;
     std::unique_lock<std::mutex> lck(mtx_Wait);
     cv_Wait.wait(lck, [&](){return m_NumOkey >= m_CurrentComms.size();});
     LOG_WARN("Entering mutex area.\n");

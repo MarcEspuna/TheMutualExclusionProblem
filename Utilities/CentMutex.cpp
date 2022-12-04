@@ -18,9 +18,7 @@ CentMutex::~CentMutex()
 void CentMutex::requestCS()
 {
     LOG_TRACE("Requesting token to leader\n");
-    LOG_TRACE("Sending request.\n");
     App::SendMsg(m_ParentId,Tag::REQUEST);
-    LOG_TRACE("Waiting for token\n");
     std::unique_lock<std::mutex> lk(mtx_Wait);
     cv_Wait.wait(lk, [&](){return m_Token;});
     LOG_TRACE("Token received!\n");

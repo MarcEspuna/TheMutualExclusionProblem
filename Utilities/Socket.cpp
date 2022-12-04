@@ -32,7 +32,6 @@ bool Socket::InitSocket()
 		LOG_ERROR("[INIT SOCKET]: Could not create socket : {}\n", WSAGetLastError());
 		return false;
 	}
-	LOG_INFO("Socket {} initialized.\n", s);
 	return true;
 }
 

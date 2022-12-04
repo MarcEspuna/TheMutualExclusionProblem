@@ -24,7 +24,7 @@ private:
 
     friend class App;
 private: 
-    void WaitForChilds(int count);
+    void WaitForChilds();
     void ChildReadyNotify(int id);
     void NotifyChildsToStart();
     void BroadcastMsgToChilds(Tag tag, int msg = 0);

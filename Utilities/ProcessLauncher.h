@@ -3,7 +3,7 @@
 
 class Process {
 public:
-    Process(const char* execPath);
+    Process();
     ~Process();
 
     void wait();
@@ -20,7 +20,6 @@ public:
     }   
 
 private:
-    char* path;                             // Executable path
     STARTUPINFO info = {sizeof(info)};
     PROCESS_INFORMATION processInfo;
     std::vector<LPTSTR> arguments;

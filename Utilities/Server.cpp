@@ -7,9 +7,7 @@ Server::Server() {}
 Server::Server(int port)
 	: m_Port(port), m_Conectivity(nullptr)
 {
-	LOG_INFO("Server, Server socket initialized.\n");
 	Bind(port);	
-	m_Conectivity = new std::thread(&Server::IncommingConnectionsHandler, this);
 }
 
 Server::~Server()
@@ -63,6 +61,11 @@ void Server::Bind(const unsigned int& port, const unsigned long& address)
 	}
 	m_Connected = true;
 	LOG_INFO("Server, Bind done.\n");
+}
+
+void Server::StartConnectionHandling()
+{	
+	m_Conectivity = new std::thread(&Server::IncommingConnectionsHandler, this);
 }
 
 void Server::ListenConn(const unsigned int& connectionCount) const

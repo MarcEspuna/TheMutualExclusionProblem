@@ -18,13 +18,7 @@ static bool eraseFromVector(T toErase, std::vector<T>& vec)
 MsgHandler::MsgHandler(const Linker& comms)
  :  m_ParentId(comms.parentPort), m_Running(true), 
     m_Id(comms.serverPort), m_ChildFinishes(0), m_Begin(false)
-{  
-    /* Connect to specified servers */
-    for (int port : comms.connections)
-    {
-        AddClient(port);                                   // Creates a client and connects to specified port server                                     
-        StartClientService(port);                          // Starts the thread that handles receptions on this particular client
-    }
+{     
 }
 
 MsgHandler::~MsgHandler()
@@ -43,13 +37,13 @@ MsgHandler::~MsgHandler()
 void MsgHandler::ClientService(int id, std::function<void(int, int, Tag)> handleMsg)
 {
     bool connected = true;
+    LOG_TRACE("ClientService started id: {}\n", id);
     while (connected)
     {
-        LOG_INFO("Listening from {}", id);
         switch (App::IncommingReadFrom(id))
         {
         case 1:     // Incomming read - > <Tag:1 byte(char)> <data: 4 bytes(int)>s
-            LOG_INFO("Client service incomming read.\n");
+            LOG_TRACE("ClientService, incomming read from {}\n", id);
             std::array<char, 5> data;                           // Reception buffer
             App::ReceiveMsg(id, data);
             {
@@ -79,10 +73,11 @@ void MsgHandler::BroadcastMsg(Tag tag, int msg)
 {
     std::lock_guard<std::mutex> lck(mtx_DataLock);
     LOG_WARN("Broadcasting msg tag, {}\n", (char)tag);
-    for (int i = 0; i < m_CurrentComms.size(); i++)
+    for (int i = 0; i < m_CurrentComms.size(); i++){
+        LOG_TRACE("Sending msg to {}", m_CurrentComms[i]);
         App::SendMsg(m_CurrentComms[i], tag, msg); 
+    }
 }
-
 
 
 void MsgHandler::AddClient(int id)
@@ -100,4 +95,25 @@ void MsgHandler::eraseClient(int id)
 {
     std::lock_guard<std::mutex> lock(mtx_DataLock);
     eraseFromVector(id, m_CurrentComms);
+}
+
+std::vector<std::string> Linker::GetProcessArgs(const std::string& exe, MtxType mtxType) const
+{
+    std::vector<std::string> arguments;
+    std::string strMtxType = (mtxType == MtxType::LAMPORT) ? std::string(MTX_LAMPORT) : std::string(MTX_RA); 
+    std::vector<std::string> childPorts = GetStrConnections();
+    std::string connCount = std::to_string(connections.size()-1);
+    std::string s;
+    for (int i = 0; i < connections.size(); i++)
+    {
+        s.append(exe);s.append(" "); s.append("LW");s.append(std::to_string(i+1));s.append(" ");s.append(strMtxType); s.append(" ");
+        s.append(childPorts[i]); s.append(" "); s.append(std::to_string(serverPort)); s.append(" "); s.append(connCount); 
+        
+        for (int e = 0; e < i; e++){
+            s.append(" "); s.append(childPorts[e]);
+        }
+        arguments.push_back(s);
+        s.clear();
+    }
+    return arguments;
 }

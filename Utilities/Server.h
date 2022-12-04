@@ -21,6 +21,9 @@ public:
 	/* Bind server to specific port and address(localhost if no address is specifed) */
 	void Bind(const unsigned int& port, const unsigned long& address = INADDR_ANY);
 
+	/* Start dispatching incomming connections */
+	void StartConnectionHandling();
+
 protected:
 	virtual void IncommingConnection(SOCKET client) = 0;				// Incomming connection callback
 private:
