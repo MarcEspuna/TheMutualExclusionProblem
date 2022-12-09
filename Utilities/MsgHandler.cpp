@@ -97,7 +97,7 @@ void MsgHandler::eraseClient(int id)
     eraseFromVector(id, m_CurrentComms);
 }
 
-std::vector<std::string> Linker::GetProcessArgs(const std::string& exe, MtxType mtxType) const
+std::vector<std::string> Linker::GetProcessArgs(const std::string& pName, const std::string& exe, MtxType mtxType) const
 {
     std::vector<std::string> arguments;
     std::string strMtxType = (mtxType == MtxType::LAMPORT) ? std::string(MTX_LAMPORT) : std::string(MTX_RA); 
@@ -106,7 +106,7 @@ std::vector<std::string> Linker::GetProcessArgs(const std::string& exe, MtxType 
     std::string s;
     for (int i = 0; i < connections.size(); i++)
     {
-        s.append(exe);s.append(" "); s.append("LW");s.append(std::to_string(i+1));s.append(" ");s.append(strMtxType); s.append(" ");
+        s.append(exe);s.append(" "); s.append(pName); s.append("-LW");s.append(std::to_string(i+1));s.append(" ");s.append(strMtxType); s.append(" ");
         s.append(childPorts[i]); s.append(" "); s.append(std::to_string(serverPort)); s.append(" "); s.append(connCount); 
         
         for (int e = 0; e < i; e++){

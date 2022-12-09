@@ -77,7 +77,7 @@ void LWApp::run()
         for (int i = 0; i < 3; i++)
         {
             m_Mutex->requestCS();
-            Sleep(2);
+            Sleep(1000);
             _write(1, prompt.c_str(), (int)prompt.size());
             m_Mutex->releaseCS();
         }

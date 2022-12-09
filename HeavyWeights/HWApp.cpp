@@ -16,7 +16,7 @@ HWApp::HWApp(const std::string& name, const Linker& link, MtxType mtxType)
     LOG_INFO("Creating lightweight processes\n");
     m_Processes.reserve(5);
 
-    std::vector<std::string> arguments = link.GetProcessArgs("LW.exe", mtxType);
+    std::vector<std::string> arguments = link.GetProcessArgs(name, "LW.exe", mtxType);
     for (const std::string& arg : arguments)
     {
         std::cout << arg << std::endl;

@@ -22,7 +22,7 @@ struct Linker
             ports.push_back(std::to_string(i));
         return ports;
     } 
-    std::vector<std::string> GetProcessArgs(const std::string& exe, MtxType mtxType) const;
+    std::vector<std::string> GetProcessArgs(const std::string& pName, const std::string& exe, MtxType mtxType) const;
 };
 
 
